@@ -30,12 +30,14 @@ sem relação com os identificadores do desktop.
 Há acréscimos: timestamps com timezone, metadados opcionais de arquivo/ator em
 importações e FKs restritivas, incluindo o vínculo empresa/importação da folha.
 `valor` e `liquido` usam `NUMERIC` sem escala fixa, como no esquema original,
-para preservar os decimais sem impor arredondamento. O banco antigo não impunha FKs. Antes da futura migração real, será necessário conferir
+para preservar os decimais sem impor arredondamento. O banco antigo não impunha FKs. Antes de qualquer carga real, a ferramenta confere
 referências órfãs e divergências de empresa. Nenhum registro será descartado ou renumerado silenciosamente.
 Novos cadastros terão validação nos serviços, sem alterar os dados históricos nesta etapa.
 
-Após copiar os IDs, cada sequência deve ser sincronizada em uma janela sem novas
-inserções. Exemplo para `companies` (repetir para cada tabela importada):
+Após copiar os IDs, a ferramenta ajusta cada identidade transacionalmente com
+`ALTER TABLE ... ALTER COLUMN id RESTART WITH`, sob bloqueio de escrita.
+O exemplo abaixo é uma referência manual com `setval` (não transacional),
+não o mecanismo usado pelo comando. Exemplo para `companies` (repetir para cada tabela importada):
 
 ```sql
 SELECT setval(
@@ -47,7 +49,10 @@ SELECT setval(
 
 A revisão da migração `0001` substitui o esquema UUID do PR #2 ainda aberto. A versão
 anterior foi testada apenas em PostgreSQL descartável; esta revisão não converte
-bancos UUID existentes. Não há importador de dados reais nesta entrega.
+bancos UUID existentes. A ferramenta de carga única `app.scripts.migrate_sqlite` implementa a transferência
+com simulação por padrão e `--apply` para gravar. Veja o
+[guia de migração](../backend/README.md#migração-única-dos-dados-do-desktop).
+A ferramenta exige as sete tabelas operacionais vazias; não converte bancos UUID.
 
 Execute `bash web/backend/tests/run_postgres.sh` na raiz para verificar o esquema,
 copiar registros sintéticos de SQLite para PostgreSQL preservando todos os campos,
