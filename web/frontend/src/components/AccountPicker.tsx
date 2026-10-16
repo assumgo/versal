@@ -10,6 +10,7 @@ export function AccountPicker({ companyId, label, value, onChange, onResolved, d
   const [choices, setChoices] = useState<Page<ChartAccount> | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [resolution, setResolution] = useState(0);
   const callback = useRef(onResolved);
   callback.current = onResolved;
   const generation = useRef(0);
@@ -26,7 +27,7 @@ export function AccountPicker({ companyId, label, value, onChange, onResolved, d
       }).catch(error => { if (generation.current === current) setError(errorMessage(error)); });
     }, 200);
     return () => { window.clearTimeout(timer); ++generation.current; ++searchVersion.current; };
-  }, [companyId, value]);
+  }, [companyId, value, resolution]);
   async function search(offset = 0, limit = 25) {
     const current = ++searchVersion.current;
     setBusy(true); setError('');
@@ -39,6 +40,6 @@ export function AccountPicker({ companyId, label, value, onChange, onResolved, d
   return <div className="account-picker"><label>{label}<input value={value} disabled={disabled} onChange={event => onChange(event.target.value)} placeholder="Código ou descrição para pesquisar" /></label><button type="button" className="secondary" disabled={disabled || busy} onClick={() => void search()} aria-label={`Buscar ${label.toLowerCase()}`}>Buscar no plano</button>
     {value.trim() && !normalizeAccount(value) && <p className="catalog-hint">Pesquise a descrição e selecione uma conta, ou informe um código com dígitos.</p>}
     {error && <Alert variant="error">{error}</Alert>}
-    {choices && <section className="account-choices" aria-label={`Resultados de ${label.toLowerCase()}`}><ul>{choices.items.map(row => <li key={row.id}><button type="button" disabled={disabled} className="secondary" aria-label={`Selecionar conta ${row.id}`} onClick={() => { onChange(row.conta ?? ''); callback.current(row); setChoices(null); }}>{row.conta ?? 'Sem código'} — {row.descricao ?? 'Sem descrição'} (ID {row.id})</button></li>)}</ul>{choices.items.length === 0 && <p>Nenhuma conta encontrada. Você pode informar um código manualmente.</p>}<CatalogPagination total={choices.total} offset={choices.offset} limit={choices.limit} busy={busy || disabled} onOffsetChange={offset => void search(offset, choices.limit)} onLimitChange={limit => void search(0, limit)} /></section>}
+    {choices && <section className="account-choices" aria-label={`Resultados de ${label.toLowerCase()}`}><ul>{choices.items.map(row => <li key={row.id}><button type="button" disabled={disabled} className="secondary" aria-label={`Selecionar conta ${row.id}`} onClick={() => { onChange(row.conta ?? ''); callback.current(null); setResolution(value => value + 1); setChoices(null); }}>{row.conta ?? 'Sem código'} — {row.descricao ?? 'Sem descrição'} (ID {row.id})</button></li>)}</ul>{choices.items.length === 0 && <p>Nenhuma conta encontrada. Você pode informar um código manualmente.</p>}<CatalogPagination total={choices.total} offset={choices.offset} limit={choices.limit} busy={busy || disabled} onOffsetChange={offset => void search(offset, choices.limit)} onLimitChange={limit => void search(0, limit)} /></section>}
   </div>;
 }

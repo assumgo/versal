@@ -98,3 +98,25 @@ it('ignores a successful save after the company changes', async () => {
   expect(screen.queryByText('Registro salvo.')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Descrição')).not.toBeInTheDocument();
 });
+
+it('returns to the last valid page when inactivating the final filtered row', async () => {
+  let inactivated = false;
+  vi.stubGlobal('fetch', vi.fn(async (input: string, init?: RequestInit) => {
+    if (input.includes('chart-accounts')) return response(page([]));
+    if (init?.method === 'PATCH') { inactivated = true; return response({ ...rubric, status: 'Inativa' }); }
+    const url = new URL(input);
+    const offset = Number(url.searchParams.get('offset') || 0);
+    return response({ items: inactivated && offset >= 50 ? [] : [rubric], total: inactivated ? 50 : 51, offset, limit: 50 });
+  }));
+  render(<Rubrics company={company} canWrite />);
+  await screen.findByText('Salário');
+  await userEvent.selectOptions(screen.getByLabelText('Filtrar status'), 'Ativa');
+  await screen.findByText('1–50 de 51 registros');
+  await userEvent.click(screen.getByRole('button', { name: 'Próxima' }));
+  await screen.findByText('51–51 de 51 registros');
+  await userEvent.click(screen.getByRole('button', { name: 'Editar rubrica 1' }));
+  await userEvent.selectOptions(screen.getByLabelText('Status da rubrica'), 'Inativa');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  expect(await screen.findByText('1–50 de 50 registros')).toBeVisible();
+  expect(screen.getByText('Salário')).toBeVisible();
+});

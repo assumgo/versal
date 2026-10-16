@@ -15,7 +15,12 @@ export function useCatalogPage<T>(load: (query: ListQuery) => Promise<Page<T>>) 
   useEffect(() => {
     let active = true;
     setLoading(true); setError('');
-    load({ q, offset, limit }).then(value => { if (active) setPage(value); }).catch(error => { if (active) setError(errorMessage(error)); }).finally(() => { if (active) setLoading(false); });
+    load({ q, offset, limit }).then(value => {
+      if (!active) return;
+      const lastOffset = Math.max(0, Math.ceil(value.total / limit) - 1) * limit;
+      if (offset > lastOffset) setOffset(lastOffset);
+      else setPage(value);
+    }).catch(error => { if (active) setError(errorMessage(error)); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [load, q, offset, limit, revision]);
   return { page, q, offset, limit, loading, error, setError, alive,
