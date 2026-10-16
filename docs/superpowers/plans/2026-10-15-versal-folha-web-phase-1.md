@@ -392,11 +392,36 @@ nesta demonstração; a seleção integrada pertence à Task 8.
 - Consumes: API from Tasks 3–5.
 - Produces: in-memory session context, refresh-on-start flow, protected routes, company selector and screens with loading/error/forbidden states.
 
-- [ ] **Step 1: Write failing tests** for login redirect, unauthenticated-route redirect, `403` message, company selector and Companies/Employees loading/error/success states.
-- [ ] **Step 2: Run** `npm test -- --run`; expect failure before client/session/screens.
-- [ ] **Step 3: Implement API client with `credentials: 'include'`, memory-only access token, one refresh retry, routes and forms.** Do not put access or refresh tokens in localStorage/sessionStorage.
-- [ ] **Step 4: Run** `npm test -- --run` and `npm run build`; expect PASS.
-- [ ] **Step 5: Commit** `feat: add protected session and initial operation screens`.
+- [x] **Step 1: Write failing tests** for login redirect, unauthenticated-route redirect, `403` message, company selector and Companies/Employees loading/error/success states.
+- [x] **Step 2: Run** `npm test -- --run`; expect failure before client/session/screens.
+- [x] **Step 3: Implement API client with `credentials: 'include'`, memory-only access token, one refresh retry, routes and forms.** Do not put access or refresh tokens in localStorage/sessionStorage.
+- [x] **Step 4: Run** `npm test -- --run` and `npm run build`; expect PASS.
+- [x] **Step 5: Commit** `feat: add protected session and initial operation screens`.
+
+**Status em 2026-10-16:** Task 8 implementada na branch
+`feat/frontend-session-crud`. Sessão em memória, refresh inicial e renovação
+compartilhada com um reenvio, login/logout, rotas protegidas, seletor de empresa
+e CRUDs integrados aos contratos existentes. RBAC visual e bloqueio de escrita
+em empresa inativa, confirmação de exclusão/inativação, validação do servidor
+preservando formulário e descarte de respostas de empresas anteriores.
+RED inicial: dois testes de login/seletor falharam antes da implementação;
+quatro testes adicionais de cadastros também falharam antes das telas integradas.
+Ajustados testes visuais antigos para testar o shell isoladamente e removido o
+teste de login desabilitado, substituído por testes do fluxo autenticado.
+Revisão independente encontrou reenvio de operação antiga com sessão nova;
+regressão observada em RED e corrigida com identidade de sessão por requisição.
+Cobertura adicional confirma que resposta antiga não invalida nova sessão.
+
+Decisões: seguir precedente da Task 7 de branch no checkout atual; usar History
+API para as três rotas sem dependência adicional; competência local editável
+pois a API não oferece listagem; dashboard real apresenta orientação, sem os
+indicadores simulados. Custo: novas rotas exigem extensão do mapa e hospedagem
+com fallback SPA; competências e indicadores aguardam seus endpoints.
+Confirmação de remoção usa seção acessível na página, preservando os componentes
+visuais existentes. Documentação em `web/docs/frontend-session.md`.
+Validação final: **26 testes Vitest e 3 Playwright passando**, build TypeScript/Vite
+e `git diff --check` limpos; testes usam dados sintéticos,
+sem alteração de backend, esquema ou banco operacional. Task 9 fora do escopo.
 
 ### Task 9: Compose integration, documentation and migration contract
 

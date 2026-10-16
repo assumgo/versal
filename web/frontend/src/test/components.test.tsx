@@ -4,7 +4,6 @@ import { DataTable } from '../components/DataTable';
 import { FormField } from '../components/FormField';
 import { Alert } from '../components/Alert';
 import { LoadingState } from '../components/LoadingState';
-import { Login } from '../pages/Login';
 
 it('associates field validation feedback with its input', () => {
   render(<FormField label="CNPJ" error="Informe um CNPJ válido." />);
@@ -20,10 +19,4 @@ it('announces errors and loading states', () => {
   render(<><Alert variant="error">Não foi possível carregar.</Alert><LoadingState /></>);
   expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível carregar.');
   expect(screen.getByRole('status')).toHaveTextContent('Carregando…');
-});
-it('identifies login as a visual preview and prevents an unsupported submission', () => {
-  render(<Login />);
-  expect(screen.getByLabelText('E-mail')).toHaveAttribute('autocomplete', 'username');
-  expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password');
-  expect(screen.getByRole('button', { name: /Entrar/ })).toBeDisabled();
 });

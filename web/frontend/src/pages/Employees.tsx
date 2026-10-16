@@ -1,7 +1,11 @@
-import { DataTable } from '../components/DataTable';
-const rows = [{ id: '001', name: 'Pessoa de exemplo', cpf: '000.000.000-00', registration: '0001', role: 'Auxiliar administrativo', cost: 'Administrativo', account: '10001', status: 'Ativo' }];
-export function Employees() {
-  return <><div className="page-heading"><div><p className="eyebrow">CADASTROS</p><h1>Colaboradores</h1><p>Exemplo visual dos colaboradores da empresa ativa. Dados fictícios.</p></div></div><section className="panel"><DataTable caption="Colaboradores cadastrados" rows={rows} rowKey={row => row.id} columns={[
-    { key: 'id', title: 'ID', render: row => row.id }, { key: 'name', title: 'Nome', render: row => row.name }, { key: 'cpf', title: 'CPF', render: row => row.cpf }, { key: 'registration', title: 'Matrícula', render: row => row.registration }, { key: 'role', title: 'Cargo', render: row => row.role }, { key: 'cost', title: 'Centro de custo', render: row => row.cost }, { key: 'account', title: 'Código do correntista', render: row => row.account }, { key: 'status', title: 'Status', render: row => <span className="status-badge success">{row.status}</span> },
-  ]} /></section></>;
+import { useCallback } from 'react';
+import { employees, type EmployeeInput } from '../api/employees';
+import type { Company } from '../api/companies';
+import { CrudScreen } from '../components/CrudScreen';
+import { Alert } from '../components/Alert';
+const fields = [{ key: 'nome', label: 'Nome' }, { key: 'cpf', label: 'CPF' }, { key: 'matricula', label: 'Matrícula' }, { key: 'cargo', label: 'Cargo' }, { key: 'centro_custo', label: 'Centro de custo' }, { key: 'codigo_correntista', label: 'Código do correntista' }];
+export function Employees({ company, canWrite }: { company: Company | null; canWrite: boolean }) {
+  const load = useCallback(() => employees.list(company!.id), [company?.id]);
+  if (!company) return <><h1>Colaboradores</h1><Alert>Selecione uma empresa.</Alert></>;
+  return <><Alert>{company.status === 'Inativa' ? 'Empresa inativa: disponível somente para consulta.' : `Colaboradores de ${company.razao ?? company.id}`}</Alert><CrudScreen key={`${company.id}:${company.status}`} title="Colaboradores" caption="Colaboradores cadastrados" createLabel="Novo colaborador" fields={fields} statuses={['Ativo', 'Inativo']} canWrite={canWrite && company.status !== 'Inativa'} load={load} save={(data, id) => employees.save(company.id, data as EmployeeInput, id)} remove={id => employees.remove(company.id, id)} removeLabel="Excluir" /></>;
 }
