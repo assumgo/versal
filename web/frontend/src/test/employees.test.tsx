@@ -1,0 +1,51 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, expect, it, vi } from 'vitest';
+import { Employees } from '../pages/Employees';
+import { employees } from '../api/employees';
+vi.mock('../api/employees', () => ({ employees: { list: vi.fn(), save: vi.fn(), remove: vi.fn() } }));
+afterEach(() => vi.resetAllMocks());
+it('requires a company and blocks writes to inactive companies', async () => {
+  const view = render(<Employees company={null} canWrite />);
+  expect(screen.getByText('Selecione uma empresa.')).toBeVisible();
+  vi.mocked(employees.list).mockResolvedValue([]);
+  view.rerender(<Employees company={{ id: 1, razao: 'A', status: 'Inativa', codigo_siagri: '1', fantasia: null, cnpj: null }} canWrite />);
+  expect(await screen.findByText('Nenhum registro encontrado.')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Novo colaborador' })).not.toBeInTheDocument();
+});
+it('shows network errors and offers a retry', async () => {
+  vi.mocked(employees.list).mockRejectedValue(new Error('Falha de conexão'));
+  render(<Employees company={{ id: 1, razao: 'A', status: 'Ativa', codigo_siagri: '1', fantasia: null, cnpj: null }} canWrite />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Falha de conexão');
+  expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
+});
+it('ignores a late list response from the previous company', async () => {
+  let complete!: (value: Awaited<ReturnType<typeof employees.list>>) => void;
+  vi.mocked(employees.list).mockImplementationOnce(() => new Promise(resolve => { complete = resolve; })).mockResolvedValueOnce([]);
+  const company = { id: 1, razao: 'A', status: 'Ativa', codigo_siagri: '1', fantasia: null, cnpj: null };
+  const view = render(<Employees company={company} canWrite />);
+  view.rerender(<Employees company={{ ...company, id: 2 }} canWrite />);
+  await screen.findByText('Nenhum registro encontrado.');
+  complete([{ id: 1, company_id: 1, nome: 'Pessoa anterior', cpf: null, matricula: null, cargo: null, centro_custo: null, codigo_correntista: null, status: 'Ativo' }]);
+  expect(screen.queryByText('Pessoa anterior')).not.toBeInTheDocument();
+});
+it('creates, edits and deletes employees using the selected company', async () => {
+  const row = { id: 7, company_id: 3, nome: 'Pessoa', cpf: null, matricula: null, cargo: null, centro_custo: null, codigo_correntista: null, status: 'Ativo' };
+  vi.mocked(employees.list).mockResolvedValue([row]);
+  render(<Employees company={{ id: 3, razao: 'A', status: 'Ativa', codigo_siagri: '1', fantasia: null, cnpj: null }} canWrite />);
+  await screen.findByText('Pessoa');
+  await userEvent.click(screen.getByRole('button', { name: 'Novo colaborador' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  await screen.findByText('Registro salvo.');
+  expect(employees.save).toHaveBeenCalledWith(3, expect.objectContaining({ nome: '', cpf: '' }), undefined);
+  await userEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+  await userEvent.type(screen.getByLabelText('Cargo'), 'Analista');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  await screen.findByText('Registro salvo.');
+  expect(employees.save).toHaveBeenCalledWith(3, expect.objectContaining({ cargo: 'Analista' }), 7);
+  await userEvent.click(await screen.findByRole('button', { name: 'Excluir' }));
+  expect(employees.remove).not.toHaveBeenCalled();
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
+  await screen.findByText('Operação concluída.');
+  expect(employees.remove).toHaveBeenCalledWith(3, 7);
+});

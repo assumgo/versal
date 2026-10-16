@@ -94,3 +94,8 @@ dialog::backdrop { background: #14271388; }
   .period-tag { display: none; }
 }
 @media (max-width: 480px) { h1 { font-size: 25px; } .stats-grid { gap: 10px; } .stat-card { padding: 14px; } .section-heading { align-items: flex-start; padding: 16px; } .count-badge { display: none; } .summary-line { align-items: flex-start; } }
+
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+select { max-width: 100%; min-height: 36px; border: 1px solid var(--border, #cfdccc); border-radius: 5px; padding: 6px 10px; background: white; color: inherit; font: inherit; }
+.context-field select { width: 100%; }
+.top-header .actions { margin-left: auto; }

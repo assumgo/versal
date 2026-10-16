@@ -1,0 +1,54 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, expect, it, vi } from 'vitest';
+import { Companies } from '../pages/Companies';
+import { ApiError } from '../api/client';
+import { companies } from '../api/companies';
+vi.mock('../api/companies', () => ({ companies: { list: vi.fn(), save: vi.fn(), remove: vi.fn() } }));
+afterEach(() => vi.resetAllMocks());
+it('loads and creates a company with the required legacy fields', async () => {
+  vi.mocked(companies.list).mockResolvedValue([]);
+  render(<Companies canWrite onChanged={() => {}} />);
+  expect(screen.getByRole('status')).toBeVisible();
+  await screen.findByText('Nenhum registro encontrado.');
+  await userEvent.click(screen.getByRole('button', { name: 'Nova empresa' }));
+  await userEvent.type(screen.getByLabelText('Código Siagri'), '10');
+  await userEvent.type(screen.getByLabelText('Razão social'), 'Nova');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  expect(await screen.findByText('Registro salvo.')).toBeVisible();
+  expect(companies.save).toHaveBeenCalledWith(expect.objectContaining({ codigo_siagri: '10', razao: 'Nova' }), undefined);
+});
+it('shows forbidden and hides write controls for read-only users', async () => {
+  vi.mocked(companies.list).mockRejectedValue(new ApiError(403, 'Sem permissão para acessar este recurso.'));
+  render(<Companies canWrite={false} onChanged={() => {}} />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Sem permissão');
+  expect(screen.queryByRole('button', { name: 'Nova empresa' })).not.toBeInTheDocument();
+});
+it('edits a company and confirms soft inactivation', async () => {
+  const row = { id: 5, codigo_siagri: '10', razao: 'Original', fantasia: '', cnpj: '', status: 'Ativa' };
+  vi.mocked(companies.list).mockResolvedValue([row]);
+  render(<Companies canWrite onChanged={() => {}} />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+  await userEvent.clear(screen.getByLabelText('Razão social'));
+  await userEvent.type(screen.getByLabelText('Razão social'), 'Alterada');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  await screen.findByText('Registro salvo.');
+  expect(companies.save).toHaveBeenCalledWith(expect.objectContaining({ razao: 'Alterada' }), 5);
+  await userEvent.click(await screen.findByRole('button', { name: 'Inativar' }));
+  expect(companies.remove).not.toHaveBeenCalled();
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
+  await screen.findByText('Operação concluída.');
+  expect(companies.remove).toHaveBeenCalledWith(5);
+});
+it('preserves form values after server validation errors', async () => {
+  vi.mocked(companies.list).mockResolvedValue([]);
+  vi.mocked(companies.save).mockRejectedValue(new ApiError(422, 'CNPJ inválido'));
+  render(<Companies canWrite onChanged={() => {}} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Nova empresa' }));
+  await userEvent.type(screen.getByLabelText('Código Siagri'), '1');
+  await userEvent.type(screen.getByLabelText('Razão social'), 'Empresa');
+  await userEvent.type(screen.getByLabelText('CNPJ'), '123');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('CNPJ inválido');
+  expect(screen.getByLabelText('CNPJ')).toHaveValue('123');
+});
