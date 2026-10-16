@@ -19,6 +19,8 @@ async def test_openapi_documents_phase_one_routes_and_bearer_auth():
             '/api/v1/companies/{company_id}': {'get', 'patch', 'delete'},
             '/api/v1/companies/{company_id}/employees': {'get', 'post'},
             '/api/v1/companies/{company_id}/chart-accounts': {'get', 'post'},
+            '/api/v1/companies/{company_id}/competences': {'get'},
+            '/api/v1/companies/{company_id}/accounting-review': {'get'},
             '/api/v1/companies/{company_id}/finance-params': {'get', 'post'},
             '/api/v1/companies/{company_id}/rubrics': {'get', 'post'},
             '/api/v1/companies/{company_id}/rubrics/{rubric_id}': {'get', 'patch'},

@@ -10,6 +10,7 @@ from app.api.routes.employees import router as employees_router
 from app.api.routes.chart_accounts import router as chart_accounts_router
 from app.api.routes.rubrics import router as rubrics_router
 from app.api.routes.finance_params import router as finance_params_router
+from app.api.routes.accounting_review import router as accounting_review_router
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -28,6 +29,7 @@ app.include_router(employees_router)
 app.include_router(chart_accounts_router)
 app.include_router(rubrics_router)
 app.include_router(finance_params_router)
+app.include_router(accounting_review_router)
 
 
 @app.exception_handler(RequestValidationError)
