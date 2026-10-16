@@ -4,8 +4,8 @@
 !.env.example
 __pycache__/
 .pytest_cache/
-.venv/
-node_modules/
+.venv
+node_modules
 dist/
 coverage/
 *.db
@@ -20,3 +20,6 @@ coverage/
 *.sqlite3-wal
 *.sqlite3-shm
 *.sqlite3-journal
+
+web/frontend/test-results/
+web/frontend/playwright-report/

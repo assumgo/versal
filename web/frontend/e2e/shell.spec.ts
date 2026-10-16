@@ -14,7 +14,7 @@ test('desktop shell preserves navigation and company context', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
   await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(11);
   await expect(page.getByLabel('Empresa ativa')).toBeVisible();
-  await page.screenshot({ path: '../docs/screenshots/task8-desktop.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/shell-desktop.png', fullPage: true });
 });
 
 test('mobile drawer contains focus and tables scroll without overflowing the page', async ({ page }) => {
@@ -28,11 +28,11 @@ test('mobile drawer contains focus and tables scroll without overflowing the pag
   await expect(page.getByRole('button', { name: 'Backup', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Fechar menu', exact: true })).toBeFocused();
-  await page.screenshot({ path: '../docs/screenshots/task8-mobile-drawer.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/shell-mobile-drawer.png', fullPage: true });
   await page.keyboard.press('Escape');
   await expect(trigger).toBeFocused();
   await expect(page.getByRole('navigation')).not.toBeVisible();
-  await page.screenshot({ path: '../docs/screenshots/task8-mobile.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/shell-mobile.png', fullPage: true });
   await trigger.click();
   await page.getByRole('button', { name: 'Colaboradores', exact: true }).click();
   const table = page.getByRole('region', { name: 'Colaboradores cadastrados' });
@@ -40,7 +40,7 @@ test('mobile drawer contains focus and tables scroll without overflowing the pag
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await table.evaluate(element => { element.scrollLeft = element.scrollWidth; });
   await expect(page.getByRole('columnheader', { name: 'Status', exact: true })).toBeInViewport();
-  await page.screenshot({ path: '../docs/screenshots/task8-mobile-table.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/shell-mobile-table.png', fullPage: true });
 });
 
 test('resizing an open mobile drawer to desktop restores content interaction', async ({ page }) => {

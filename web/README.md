@@ -100,6 +100,9 @@ Execute `npm test -- --run` para os testes de componentes e sessão.
 `VITE_API_BASE_URL` aponta para a API consumida pela sessão e pelos cadastros. Variáveis `VITE_*` são públicas e não
 devem conter segredos.
 
+Os módulos de plano de contas e rubricas são descritos no
+[guia de cadastros contábeis](docs/accounting-catalogs.md).
+
 ## Banco de dados e migrações
 
 A migração `0001` cria as 13 tabelas da fundação. O processo da API não cria tabelas. A subida Compose aplica as migrações pelo
