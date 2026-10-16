@@ -263,3 +263,5 @@ docker compose -p versal-check down
 Esse projeto tem seu próprio volume. `down` preserva os dados; use `down --volumes`
 somente para descartar um projeto de testes cujo conteúdo possa ser removido.
 Nunca execute testes ou reversões de migração contra o banco operacional.
+
+As telas de conferência contábil e cadastro financeiro estão descritas em [Parametrizações contábil e financeira](docs/accounting-finance.md).
