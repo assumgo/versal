@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from app.api.routes.auth import router as auth_router
 from app.api.routes.companies import router as companies_router
 from app.api.routes.users import router as users_router
+from app.api.routes.employees import router as employees_router
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -12,6 +13,7 @@ app = FastAPI(title=settings.app_name)
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(companies_router)
+app.include_router(employees_router)
 
 
 @app.exception_handler(RequestValidationError)

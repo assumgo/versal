@@ -254,11 +254,42 @@ e ausência de recuperação autônoma de conta nesta entrega.
 **Interfaces:**
 - Produces: company list/read/create/update/inactivate endpoints and employee CRUD scoped to an authorized company.
 
-- [ ] **Step 1: Write failing tests** for CPF/CNPJ validation, inactive-company behavior, employee CRUD, company-scoped lists and audit events.
-- [ ] **Step 2: Run** `pytest tests/test_companies.py tests/test_employees.py -v`; expect failure before repositories/services.
-- [ ] **Step 3: Implement schemas, repository queries that always filter `company_id`, services and routes.** Use soft inactivation for companies with dependent history.
-- [ ] **Step 4: Run** `pytest tests/test_companies.py tests/test_employees.py -v`; expect PASS.
-- [ ] **Step 5: Commit** `feat: add companies and employees CRUD`.
+- [x] **Step 1: Write failing tests** for CPF/CNPJ validation, inactive-company behavior, employee CRUD, company-scoped lists and audit events.
+- [x] **Step 2: Run** `pytest tests/test_companies.py tests/test_employees.py -v`; expect failure before repositories/services.
+- [x] **Step 3: Implement schemas, repository queries that always filter `company_id`, services and routes.** Use soft inactivation for companies with dependent history.
+- [x] **Step 4: Run** `pytest tests/test_companies.py tests/test_employees.py -v`; expect PASS.
+- [x] **Step 5: Commit** `feat: add companies and employees CRUD`.
+
+**Status em 2026-10-16:** CRUD de empresas e colaboradores implementado.
+Empresas: POST/PATCH/DELETE restritos ao Administrador, mantendo vínculo explícito
+para leitura e alterações. Criação concede vínculo ao criador na mesma transação.
+DELETE inativa sem remover histórico ou vínculos; PATCH permite reativar.
+Colaboradores: GET para todos os papéis autorizados; POST/PATCH/DELETE para
+Administrador e Operador, sempre sob `/api/v1/companies/{company_id}/employees`.
+DELETE de colaborador remove o cadastro; histórico legado de folha permanece
+independente, sem FK para colaboradores. Empresa inativa permite consulta, mas
+bloqueia escrita de colaboradores com `409`. Bloqueio da linha da empresa
+serializa essas escritas com inativação/reativação.
+
+CPF/CNPJ numéricos exigidos na criação, aceitando máscara convencional e salvando
+somente dígitos, com verificação dos dígitos e rejeição de sequências repetidas.
+PATCH distingue ausência e nulo, rejeita nulo para nome/documento/status e campos
+extras; nomes/status de modelos e migrações legadas permanecem intactos.
+Toda escrita confirma auditoria na mesma transação, com metadados limitados aos
+nomes dos campos alterados; falha de auditoria reverte todas as seis operações.
+Registro do router de colaboradores antecipado da Task 6 para validar HTTP.
+Paginação e unicidade documental não foram acrescentadas ao esquema legado.
+
+RED: **21 falhas por HTTP 404/405, 103 passando**. Primeiro GREEN: **124 passando**;
+com cobertura adicional de rollback e reativação, **131 passando**. Steps 2 e 4
+executados na suíte completa com `-q` em vez de isolados com `-v`.
+Revisão independente somente leitura sem problemas críticos/importantes;
+recomendação opcional pendente: teste concorrente de inativação versus escrita
+de colaborador (a regra de bloqueio está implementada, com cobertura sequencial).
+Validação final: `sg docker -c 'bash web/backend/tests/run_postgres.sh'`
+com **131 testes passando nos dois ciclos**, sem skips, Alembic sem diferenças
+antes/depois de downgrade e reupgrade e verificação de schema vazio após downgrade.
+`git diff --check` limpo. Banco operacional não alterado.
 
 ### Task 6: Seed data, OpenAPI and backend verification
 
