@@ -99,3 +99,24 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 select { max-width: 100%; min-height: 36px; border: 1px solid var(--border, #cfdccc); border-radius: 5px; padding: 6px 10px; background: white; color: inherit; font: inherit; }
 .context-field select { width: 100%; }
 .top-header .actions { margin-left: auto; }
+
+.catalog-controls, .catalog-pagination { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 16px 0; }
+.catalog-controls label { flex: 1; min-width: 180px; }
+.catalog-controls input, .catalog-form input, .catalog-form select { width: 100%; box-sizing: border-box; }
+.catalog-controls label, .catalog-form label { display: flex; flex-direction: column; gap: 6px; }
+.catalog-pagination { align-items: center; justify-content: space-between; }
+.catalog-pagination p { margin: 0; }
+.catalog-form { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; min-width: 0; }
+.catalog-form .actions, .catalog-hint { grid-column: 1 / -1; }
+.catalog-hint { color: var(--text-muted, #55665b); margin: 0; font-size: .9rem; }
+@media (max-width: 600px) { .catalog-form { grid-template-columns: minmax(0, 1fr); } .catalog-controls { align-items: stretch; } }
+
+.rubric-side { border: 1px solid var(--border, #cfdccc); border-radius: 8px; padding: 14px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.rubric-side legend { font-weight: 700; padding: 0 6px; }
+.account-picker { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.account-picker > button { align-self: start; }
+.account-choices { min-width: 0; max-height: 330px; overflow: auto; padding: 8px; background: #f7faf5; }
+.account-choices ul { margin: 0; padding: 0; list-style: none; }
+.account-choices li { margin: 4px 0; }
+.account-choices li button { text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.catalog-form textarea { min-height: 90px; width: 100%; resize: vertical; box-sizing: border-box; }
