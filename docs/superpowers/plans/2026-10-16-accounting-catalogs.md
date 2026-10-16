@@ -124,7 +124,7 @@ Listagens usam `q`, `offset` >= 0 e `limit` 1–100 (padrão 50). O frontend ofe
 
 Implementado na branch `feat/accounting-catalogs`, baseada na main após merge do
 PR #10. APIs e telas mantêm a regra de salvamento do desktop. Foram aprovados
-227 testes backend, 45 frontend, build TypeScript/Vite e 7 testes Playwright.
+227 testes backend, 46 frontend, build TypeScript/Vite e 7 testes Playwright.
 Verificações de drift, downgrade e reaplicação passaram em PostgreSQL descartável.
 
 A revisão independente identificou divergência de preview ao selecionar uma

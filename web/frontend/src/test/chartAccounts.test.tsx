@@ -52,8 +52,7 @@ it('creates an account and displays the actual normalized server result', async 
   await userEvent.type(screen.getByLabelText('Conta'), '00.123');
   await userEvent.type(screen.getByLabelText('Descrição'), 'Salários');
   await userEvent.selectOptions(screen.getByLabelText('Gera centro de custo'), '1');
-  await userEvent.clear(screen.getByLabelText('Tipo de correntista'));
-  await userEvent.type(screen.getByLabelText('Tipo de correntista'), '2-Parceiro');
+  await userEvent.selectOptions(screen.getByLabelText('Tipo de correntista'), '2-Parceiro');
   await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
   expect(await screen.findByText('Registro salvo.')).toBeVisible();
   expect(await screen.findByText('00123')).toBeVisible();
@@ -123,4 +122,22 @@ it('does not display an old successful save after switching company', async () =
   await act(async () => { finish(response(account)); });
   expect(screen.queryByText('Registro salvo.')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Descrição')).not.toBeInTheDocument();
+});
+
+it('uses a working type selector and preserves a custom legacy option until explicitly changed', async () => {
+  let patch: Record<string, unknown> | null = null;
+  const legacy = { ...account, tipo_correntista: '1-Legado', gera_cor: 0 };
+  vi.stubGlobal('fetch', vi.fn(async (_input: string, init?: RequestInit) => {
+    if (init?.method === 'PATCH') { patch = JSON.parse(String(init.body)); return response({ ...legacy, tipo_correntista: '2-Parceiro', gera_cor: 1 }); }
+    return response(page([legacy]));
+  }));
+  render(<ChartAccounts company={company} canWrite />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Editar conta 1' }));
+  const select = screen.getByLabelText('Tipo de correntista');
+  expect(select).toHaveValue('1-Legado');
+  await userEvent.selectOptions(select, '2-Parceiro');
+  expect(screen.getByText('Sim', { selector: 'strong' })).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  await screen.findByText('Registro salvo.');
+  expect(patch).toEqual({ tipo_correntista: '2-Parceiro' });
 });

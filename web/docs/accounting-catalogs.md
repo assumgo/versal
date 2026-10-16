@@ -112,3 +112,5 @@ usuários e vínculos. Recrie as imagens/serviços da aplicação sem `down -v`,
 executar o migrador SQLite e sem recriar administrador. Faça backup antes e
 confira contagens, login e consultas depois. Não use dados da aplicação como
 fixtures nem execute testes de mutação nessa base.
+
+O combo Tipo de correntista permite selecionar `2-Parceiro` ou `9-Nenhum`. Tipos legados diferentes continuam disponíveis ao editar a conta e são preservados enquanto não forem alterados.

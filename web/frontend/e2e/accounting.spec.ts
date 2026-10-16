@@ -68,6 +68,8 @@ test('logs in, maintains accounts, and saves rubric flags using the desktop rule
   await page.getByRole('button', { name: 'Nova conta' }).click();
   await page.getByLabel('Conta', { exact: true }).fill('007.89');
   await page.getByLabel('Descrição', { exact: true }).fill('Conta sintética criada');
+  await page.getByRole('combobox', { name: /^Tipo de correntista/ }).selectOption('2-Parceiro');
+  await expect(page.getByText('Gera correntista: Sim', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Salvar', exact: true }).click();
   await expect(page.getByText('00789', { exact: true })).toBeVisible();
   await page.getByLabel('Pesquisar contas').fill('sintética');
