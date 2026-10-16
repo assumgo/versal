@@ -1,11 +1,11 @@
 from datetime import datetime
-from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, MetaData, func
+from sqlalchemy import BigInteger, DateTime, Identity, MetaData, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
+    type_annotation_map = {int: BigInteger}
     metadata = MetaData(naming_convention={
         'ix': 'ix_%(table_name)s_%(column_0_N_name)s',
         'uq': 'uq_%(table_name)s_%(column_0_N_name)s',
@@ -16,7 +16,7 @@ class Base(DeclarativeBase):
 
 
 class IdentityMixin:
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=False), primary_key=True)
 
 
 class TimestampMixin:

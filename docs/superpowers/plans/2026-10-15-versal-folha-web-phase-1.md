@@ -15,6 +15,7 @@
 - Criar todo produto novo sob `web/`; não alterar `C:\Folhas2_18\versal_folha_txt_v2_18`.
 - Usar PostgreSQL, SQLAlchemy 2.x e Alembic; valores monetários são `NUMERIC`.
 - Não versionar segredos, senhas, tokens reais ou bancos de dados.
+- Preservar as sete tabelas operacionais do desktop: campos e nomes originais, IDs/FKs inteiros de 64 bits e competência textual; detalhes na revisão de compatibilidade da spec.
 - Usar Argon2, refresh token rotativo/revogável com hash persistido e cookie `HttpOnly`.
 - Validar papel e `user_companies` no servidor em toda operação por empresa.
 - Preservar logo/ícone e tokens visuais `#315f2f`, `#89bf21`, `#f7faf5`, `#cfdccc`.
@@ -93,17 +94,21 @@ desta entrega.
 - [x] **Step 5: Commit** `feat: add PostgreSQL schema and Alembic migration`.
 
 **Status em 2026-10-16:** etapa 2 implementada na pasta atual, branch
-`feat/database-foundation`. Treze tabelas SQLAlchemy, sessões síncronas e migração
-estática Alembic `0001`; UUIDs, timestamps com timezone, valores `NUMERIC(18,2)` e
-competências como primeiro dia do mês. FKs restritivas preservam histórico;
-FKs compostas impedem referências operacionais entre empresas.
-Teste inicial observado falhando pela ausência de `app.models`. Verificação final
-com `bash web/backend/tests/run_postgres.sh`: **21 testes passando** antes e depois
-da reversão/reaplicação; `alembic check` sem diferenças nas duas verificações.
-PostgreSQL 16 temporário removido automaticamente; banco da aplicação não alterado.
-Revisão independente estática aprovada sem apontamentos. README documenta migrações,
-testes e decisões de esquema. Login, serviços e validação de CPF/CNPJ seguem fora
-desta etapa.
+`feat/database-foundation`. Revisão solicitada pelo usuário após consultar o
+código original: as sete tabelas operacionais mantêm seus campos/nomes originais,
+IDs/FKs inteiros de 64 bits e competência textual. PKs `IDENTITY BY DEFAULT`
+permitem importar IDs sem renumerar. Campos históricos de folha e parâmetros
+financeiros/contábeis preservados; tabelas multiusuário adicionadas separadamente.
+A migração inicial `0001` foi corrigida enquanto o PR #2 permanecia aberto;
+a versão UUID anterior só havia sido aplicada em bancos descartáveis.
+Testes usam o DDL SQLite original sem dados reais e registros sintéticos para
+verificar cópia, IDs/vínculos preservados e continuidade da sequência.
+Verificação final com `bash web/backend/tests/run_postgres.sh`: **31 testes
+passando** antes e depois da reversão/reaplicação, `alembic check` sem diferenças
+nos dois ciclos. `valor`/`liquido` preservam NUMERIC sem escala fixa, com testes
+para mais de duas casas e valores grandes. Revisão independente aprovada sem
+apontamentos, comparando a fixture com o código original. Banco da aplicação e
+arquivos originais não alterados; nenhuma migração de dados reais executada.
 
 ### Task 3: Authentication, roles and audit service
 
@@ -128,7 +133,7 @@ desta etapa.
 - Create: `web/backend/tests/test_authorization.py`
 
 **Interfaces:**
-- Produces: `require_roles(*names: str)`, `require_company_access(company_id: UUID, user: User)`, and admin user/company membership endpoints.
+- Produces: `require_roles(*names: str)`, `require_company_access(company_id: int, user: User)`, and admin user/company membership endpoints.
 
 - [ ] **Step 1: Write failing tests** that an Administrator can create a user and grant company access, while Consulta cannot write and a linked user cannot see a second company.
 - [ ] **Step 2: Run** `pytest tests/test_authorization.py -v`; expect failure before dependencies/routes.

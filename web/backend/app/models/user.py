@@ -17,7 +17,7 @@ class User(IdentityMixin, TimestampMixin, Base):
     __tablename__ = 'users'
     email: Mapped[str] = mapped_column(String(254), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
-    role_id: Mapped[UUID] = mapped_column(ForeignKey('roles.id', ondelete='RESTRICT'), index=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey('roles.id', ondelete='RESTRICT'), index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, server_default=text('true'))
     role: Mapped[Role] = relationship(back_populates='users')
     memberships: Mapped[list['UserCompany']] = relationship(back_populates='user', passive_deletes='all')
@@ -27,15 +27,15 @@ class User(IdentityMixin, TimestampMixin, Base):
 class UserCompany(IdentityMixin, TimestampMixin, Base):
     __tablename__ = 'user_companies'
     __table_args__ = (UniqueConstraint('user_id', 'company_id'),)
-    user_id: Mapped[UUID] = mapped_column(ForeignKey('users.id', ondelete='RESTRICT'))
-    company_id: Mapped[UUID] = mapped_column(ForeignKey('companies.id', ondelete='RESTRICT'), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='RESTRICT'))
+    company_id: Mapped[int] = mapped_column(ForeignKey('companies.id', ondelete='RESTRICT'), index=True)
     user: Mapped[User] = relationship(back_populates='memberships')
     company: Mapped['Company'] = relationship(back_populates='memberships')
 
 
 class RefreshToken(IdentityMixin, TimestampMixin, Base):
     __tablename__ = 'refresh_tokens'
-    user_id: Mapped[UUID] = mapped_column(ForeignKey('users.id', ondelete='RESTRICT'), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='RESTRICT'), index=True)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     family_id: Mapped[UUID] = mapped_column(index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
