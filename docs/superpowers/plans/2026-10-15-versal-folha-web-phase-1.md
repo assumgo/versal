@@ -254,11 +254,55 @@ e ausência de recuperação autônoma de conta nesta entrega.
 **Interfaces:**
 - Produces: company list/read/create/update/inactivate endpoints and employee CRUD scoped to an authorized company.
 
-- [ ] **Step 1: Write failing tests** for CPF/CNPJ validation, inactive-company behavior, employee CRUD, company-scoped lists and audit events.
-- [ ] **Step 2: Run** `pytest tests/test_companies.py tests/test_employees.py -v`; expect failure before repositories/services.
-- [ ] **Step 3: Implement schemas, repository queries that always filter `company_id`, services and routes.** Use soft inactivation for companies with dependent history.
-- [ ] **Step 4: Run** `pytest tests/test_companies.py tests/test_employees.py -v`; expect PASS.
-- [ ] **Step 5: Commit** `feat: add companies and employees CRUD`.
+- [x] **Step 1: Write failing tests** for CPF/CNPJ validation, inactive-company behavior, employee CRUD, company-scoped lists and audit events.
+- [x] **Step 2: Run** `pytest tests/test_companies.py tests/test_employees.py -v`; expect failure before repositories/services.
+- [x] **Step 3: Implement schemas, repository queries that always filter `company_id`, services and routes.** Use soft inactivation for companies with dependent history.
+- [x] **Step 4: Run** `pytest tests/test_companies.py tests/test_employees.py -v`; expect PASS.
+- [x] **Step 5: Commit** `feat: add companies and employees CRUD`.
+
+**Status em 2026-10-16:** CRUD de empresas e colaboradores implementado.
+Empresas: POST/PATCH/DELETE restritos ao Administrador, mantendo vínculo explícito
+para leitura e alterações. Criação concede vínculo ao criador na mesma transação.
+DELETE inativa sem remover histórico ou vínculos; PATCH permite reativar.
+Colaboradores: GET para todos os papéis autorizados; POST/PATCH/DELETE para
+Administrador e Operador, sempre sob `/api/v1/companies/{company_id}/employees`.
+DELETE de colaborador remove o cadastro; histórico legado de folha permanece
+independente, sem FK para colaboradores. Empresa inativa permite consulta, mas
+bloqueia escrita de colaboradores com `409`. Bloqueio da linha da empresa
+serializa essas escritas com inativação/reativação.
+
+Obrigatoriedade conferida no desktop (`app.py:1440–1444`, `1479–1482`):
+empresa exige código Siagri e razão social, ambos não vazios; CNPJ é opcional.
+Cadastro de colaboradores não exige nome, CPF ou outros campos de texto.
+CPF/CNPJ aceitam ausência, nulo ou vazio; quando preenchidos, aceitam máscara
+convencional e são salvos somente com dígitos, validando dígitos verificadores e
+rejeitando sequências repetidas. PATCH distingue ausência (preserva) de
+nulo/vazio (limpa campos opcionais); bloqueia nulo/vazio para código Siagri e razão
+social, nulo para status e campos extras. Modelos e migrações permanecem intactos.
+No desktop, centro de custo e correntista/CPF são exigidos condicionalmente na
+exportação (`app.py:2164–2179`), fora do escopo do CRUD da Task 5.
+Toda escrita confirma auditoria na mesma transação, com metadados limitados aos
+nomes dos campos alterados; falha de auditoria reverte todas as seis operações.
+Registro do router de colaboradores antecipado da Task 6 para validar HTTP.
+Paginação e unicidade documental não foram acrescentadas ao esquema legado.
+
+RED: **21 falhas por HTTP 404/405, 103 passando**. Primeiro GREEN: **124 passando**;
+com cobertura adicional de rollback e reativação, **131 passando**. Steps 2 e 4
+executados na suíte completa com `-q` em vez de isolados com `-v`.
+Revisão independente somente leitura sem problemas críticos/importantes;
+recomendação opcional pendente: teste concorrente de inativação versus escrita
+de colaborador (a regra de bloqueio está implementada, com cobertura sequencial).
+Validação final: `sg docker -c 'bash web/backend/tests/run_postgres.sh'`
+com **131 testes passando nos dois ciclos**, sem skips, Alembic sem diferenças
+antes/depois de downgrade e reupgrade e verificação de schema vazio após downgrade.
+`git diff --check` limpo. Banco operacional não alterado.
+
+**Correção de obrigatoriedade após consulta ao desktop:** testes de regressão
+observaram **10 falhas e 127 passando** antes do ajuste. Depois da correção,
+`sg docker -c 'bash web/backend/tests/run_postgres.sh'` passou **137 testes nos
+dois ciclos**, sem skips; upgrade/check/downgrade/schema vazio/reupgrade/check
+concluídos sem diferenças. Revisão independente da correção sem apontamentos.
+Código original e banco operacional não alterados.
 
 ### Task 6: Seed data, OpenAPI and backend verification
 
