@@ -94,3 +94,91 @@ bash web/backend/tests/run_postgres.sh
 O script usa PostgreSQL descartável, verifica upgrade, suíte completa, drift,
 downgrade com schema vazio e reaplicação. Nunca use o banco operacional para testes.
 O bootstrap não é executado contra a stack por esses testes.
+
+## Migração única dos dados do desktop
+
+O comando `app.scripts.migrate_sqlite` transfere as sete tabelas legadas para um
+PostgreSQL já migrado: empresas, colaboradores, rubricas, contas, parâmetros
+financeiros, importações e linhas de folha. Não mescla bancos nem substitui dados.
+As sete tabelas operacionais do destino devem estar vazias; usuários e papéis web
+podem existir. A repetição depois de uma carga é recusada.
+
+Feche o desktop e mantenha-o fechado durante a leitura. Faça e verifique um backup
+consistente do SQLite antes de executar. Havendo WAL, preserve o conjunto `.db`,
+`.db-wal` e `.db-shm`: copiar somente o `.db` pode perder transações confirmadas.
+O comando copia esse conjunto para uma pasta temporária privada, confere hashes
+antes/depois e usa o backup SQLite sobre a cópia. Não abre o original com SQLite
+nem executa checkpoint nele. Alteração durante a cópia e presença de rollback
+journal causam recusa; nesses casos, obtenha uma cópia consistente com o desktop
+fechado. O backup da origem continua sendo responsabilidade do operador.
+
+Suspenda escritas na aplicação web durante a carga e configure `DATABASE_URL`
+para o destino correto, além de `JWT_SECRET_KEY`, conforme a configuração normal.
+Não coloque senha nos argumentos. Em `web/backend/`, primeiro simule:
+
+```bash
+.venv/bin/python -m app.scripts.migrate_sqlite \
+  --source /home/gabriel/Downloads/VersalFolhaTXT/versal_folha.db \
+  --report /tmp/versal-migracao-simulacao.json
+```
+
+A simulação verifica a estrutura, os registros e o destino, sem inserir linhas
+ou alterar identidades no PostgreSQL. Ela não comprova que uma carga foi realizada.
+Revise as contagens, totais e diagnósticos do JSON. Cada relatório deve ter nome
+novo, diretório existente e ficar fora de qualquer repositório Git; é criado com
+permissão 0600 e nunca sobrescrito. O relatório não contém registros completos,
+nomes, documentos ou credenciais. Ainda assim, mantenha-o fora do Git.
+
+Depois de conferir a simulação, efetive a carga:
+
+```bash
+.venv/bin/python -m app.scripts.migrate_sqlite \
+  --source /home/gabriel/Downloads/VersalFolhaTXT/versal_folha.db \
+  --apply --report /tmp/versal-migracao-aplicacao.json
+```
+
+Com Docker, na pasta `web/`, reconstrua a imagem e confira as migrações. Monte a
+pasta da origem inteira como somente leitura para incluir WAL/SHM:
+
+```bash
+docker compose build backend
+docker compose run --rm migrate
+docker compose run --rm \
+  -v /home/gabriel/Downloads/VersalFolhaTXT:/migration:ro \
+  backend python -m app.scripts.migrate_sqlite --source /migration/versal_folha.db
+```
+
+Para gravar, repita o último comando adicionando `--apply`. Para salvar o relatório
+no host, crie antes uma pasta privada fora do repositório e acrescente um volume
+`-v /caminho/relatorios:/reports` e `--report /reports/nome-novo.json`.
+A configuração de banco do Compose já usa o hostname interno `db`; uma execução
+Python no host precisa de um endereço PostgreSQL acessível pelo host.
+
+A aplicação bloqueia escritas nas tabelas de destino, preserva IDs e todos os campos
+legados, compara cada campo, contagens e totais por empresa/competência e ajusta
+as identidades. Dados e ajustes são confirmados na mesma transação; qualquer
+falha anterior ao commit desfaz a carga. Não corrige órfãos ou divergências entre
+empresas automaticamente: esses problemas bloqueiam a migração e aparecem por
+tabela/ID, sem dados pessoais nas mensagens.
+
+Valores monetários são lidos como texto do SQLite e tratados com `Decimal`, sem
+float intermediário nem arredondamento novo. Isso preserva o valor disponível na
+origem, mas não recupera precisão já perdida pelo armazenamento REAL do SQLite.
+Se converter um REAL para texto perder mais dígitos (sem round-trip idêntico),
+a carga é bloqueada em vez de arredondar silenciosamente.
+Tabelas adicionais são informadas no relatório e ficam fora do escopo.
+
+Código 0 indica sucesso da simulação ou carga; 1 indica falha; 2 indica argumentos
+inválidos. `committed: true` no JSON identifica carga confirmada. Se houver falha
+na conexão durante o commit, o resultado será **indeterminado**: confira o destino
+antes de repetir. Se apenas o relatório falhar após o commit, a mensagem dirá
+**Carga confirmada; falha ao salvar relatório**; não repita a carga.
+
+Não são criados usuários nem vínculos com empresas automaticamente. Conceda
+acesso às empresas importadas pela administração existente, inclusive para o
+administrador. Nomes históricos de arquivos são mantidos, mas PDFs/planilhas
+originais não são enviados ao armazenamento web. Parsers e exportação TXT ficam
+fora desta ferramenta.
+
+Os testes usam somente SQLite sintético e PostgreSQL descartável. Nunca adicione
+banco real, WAL/SHM, cópias ou relatórios reais ao repositório.
