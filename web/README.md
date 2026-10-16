@@ -169,10 +169,45 @@ Ainda não há cadastro público nem comando de criação do primeiro administra
 o bootstrap está previsto na Task 6. Os testes usam contas sintéticas e banco
 descartável. A stack operacional não foi migrada ou populada nesta etapa.
 
+## Autorização e administração
+
+Todas estas rotas exigem `Authorization: Bearer <access_token>`:
+
+| Rota | Permissão e comportamento |
+| --- | --- |
+| `GET /api/v1/users` e `GET /api/v1/users/{user_id}` | Administrador; retorna identidades sem hashes ou tokens. |
+| `POST /api/v1/users` | Administrador; recebe `email`, `password` (12–1024 caracteres), `role` e `is_active` opcional. Retorna `201`. |
+| `PATCH /api/v1/users/{user_id}` | Administrador; altera os mesmos campos, todos opcionais; rejeita corpo vazio e valores nulos. |
+| `DELETE /api/v1/users/{user_id}` | Administrador; inativa o usuário preservando histórico e vínculos. Retorna `204`. |
+| `GET /api/v1/users/{user_id}/companies` | Administrador; lista os IDs das empresas vinculadas ao usuário. |
+| `PUT /api/v1/users/{user_id}/companies/{company_id}` | Administrador; concede vínculo. Retorna `204`, inclusive se já existir. |
+| `DELETE /api/v1/users/{user_id}/companies/{company_id}` | Administrador; revoga vínculo. Retorna `204`, inclusive se já estiver ausente. |
+| `GET /api/v1/companies` | Lista somente empresas vinculadas ao usuário autenticado. |
+| `GET /api/v1/companies/{company_id}` | Exige vínculo explícito, inclusive para Administrador. |
+
+Papéis aceitos: `Administrador`, `Contador`, `Operador` e `Consulta`. O papel
+precisa existir no banco; a criação inicial desses registros ficará no bootstrap
+da Task 6. E-mails são validados e preservados exatamente como informados,
+seguindo a comparação exata usada no login. Usuários novos começam sem vínculos.
+Campos extras são rejeitados; email duplicado retorna `409`.
+
+Ausência de sessão válida ou usuário inativo retorna `401`. Falta de papel
+permitido ou de vínculo retorna `403`; a consulta de empresa sem vínculo também
+retorna `403` quando o ID não existe, sem revelar sua existência. Alvos inexistentes
+na administração retornam `404`. Papel, atividade e vínculos são consultados no
+servidor a cada requisição, incluindo requisições com access tokens anteriores
+à alteração. Mudanças de senha preservam sessões existentes.
+
+Cada alteração administrativa é confirmada junto com sua auditoria (ator, IP,
+entidade e empresa quando aplicável), sem senhas ou hashes. Falha na auditoria
+reverte a alteração; concessões e revogações sem mudança não criam eventos.
+Não há alteração de esquema nesta tarefa. Escrita de empresas e validação de
+CPF/CNPJ pertencem à Task 5.
+
 ## Próximas etapas
 
-Autorização por empresa,
-cadastros e interface operacional seguem o plano em
+Cadastros de empresas/colaboradores e interface operacional seguem o plano em
 `../docs/superpowers/plans/2026-10-15-versal-folha-web-phase-1.md`.
-Os modelos, a migração inicial e os endpoints de autenticação estão implementados.
+Os modelos, a migração inicial, autenticação e administração com escopo por
+empresa estão implementados.
 A integração de sessão no frontend e importação/exportação TXT seguem nas próximas etapas.

@@ -190,11 +190,37 @@ cobertura de concorrência citada na revisão anterior foi atendida.
 **Interfaces:**
 - Produces: `require_roles(*names: str)`, `require_company_access(company_id: int, user: User)`, and admin user/company membership endpoints.
 
-- [ ] **Step 1: Write failing tests** that an Administrator can create a user and grant company access, while Consulta cannot write and a linked user cannot see a second company.
-- [ ] **Step 2: Run** `pytest tests/test_authorization.py -v`; expect failure before dependencies/routes.
-- [ ] **Step 3: Implement authorization dependencies and administrator endpoints.** Every denial returns `403`; every mutation calls `write_audit`.
-- [ ] **Step 4: Run** `pytest tests/test_authorization.py -v`; expect PASS.
-- [ ] **Step 5: Commit** `feat: enforce roles and company access`.
+- [x] **Step 1: Write failing tests** that an Administrator can create a user and grant company access, while Consulta cannot write and a linked user cannot see a second company.
+- [x] **Step 2: Run** `pytest tests/test_authorization.py -v`; expect failure before dependencies/routes.
+- [x] **Step 3: Implement authorization dependencies and administrator endpoints.** Every denial returns `403`; every mutation calls `write_audit`.
+- [x] **Step 4: Run** `pytest tests/test_authorization.py -v`; expect PASS.
+- [x] **Step 5: Commit** `feat: enforce roles and company access`.
+
+**Status em 2026-10-16:** Task 4 implementada na branch
+`feat/authorization-administration`, baseada no merge do PR #3 (`708d709`).
+Dependências compartilhadas de autenticação, RBAC e vínculo por empresa;
+administração de usuários (criar/listar/consultar/alterar/inativar) e vínculos
+(listar/conceder/revogar); leitura de empresas limitada ao usuário autenticado.
+Administrador também precisa de vínculo explícito para ler dados da empresa,
+mas pode administrar os vínculos de qualquer usuário. DELETE de usuário inativa
+para preservar histórico. Concessão e revogação são idempotentes e auditam apenas
+mudanças efetivas. Toda mutação é confirmada com sua auditoria na mesma transação,
+sem senhas/hashes nos metadados. Papéis e vínculos são consultados em cada requisição.
+Rotas registradas nesta task para testar os contratos HTTP; escrita de empresas,
+CPF/CNPJ e colaboradores seguem na Task 5; bootstrap de papéis/admin na Task 6.
+Schema de resposta de empresas antecipado da Task 5, sem alterar modelos/migrações.
+
+RED observado: **21 falhas por HTTP 404 e 60 testes passando** (59 anteriores e
+um caso de alvo ausente). Primeiro GREEN: 80 passando e uma falha na preparação
+do teste de duplicidade: rollback removia as contas ainda não confirmadas no
+savepoint de preparação. Fixture corrigida para confirmar sua preparação dentro
+da transação externa descartável. Depois, **81 passando** em ambos os ciclos.
+Cobertura ampliada para atualização inválida, permissões alteradas com JWT já
+emitido e rollback de cinco operações quando a auditoria falha. Verificação:
+`sg docker -c 'bash web/backend/tests/run_postgres.sh'` com **96 testes passando**
+antes e depois de reversão/reaplicação, sem skips e com `alembic check` limpo nos
+dois ciclos. Steps 2 e 4 executados pela suíte completa com `-q`, em vez do
+comando isolado com `-v`. Banco operacional não alterado.
 
 ### Task 5: Companies and employees CRUD
 
