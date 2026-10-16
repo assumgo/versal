@@ -222,6 +222,28 @@ antes e depois de reversão/reaplicação, sem skips e com `alembic check` limpo
 dois ciclos. Steps 2 e 4 executados pela suíte completa com `-q`, em vez do
 comando isolado com `-v`. Banco operacional não alterado.
 
+**Revisão independente e correção final:** revisão somente leitura do intervalo
+`708d709..f7c615d` confirmou isolamento por empresa, compatibilidade da autenticação
+e atomicidade da auditoria. Encontrou um ponto relevante: remoção do acesso do
+último administrador ativo. Quatro casos observados em RED (exclusão, inativação,
+rebaixamento de papel e concorrência) resultaram em **4 falhas e 99 passando**.
+Correção usa bloqueio da linha do papel Administrador antes do bloqueio do usuário
+e exige outro administrador ativo antes de remover acesso administrativo. Retorna
+`409` sem alteração/auditoria quando não há substituto; administradores inativos
+não contam. Três testes positivos preservam alterações quando há substituto.
+Teste concorrente usa sessões/conexões independentes e confirma bloqueio real
+via `pg_blocking_pids`, resultado `204`/`409` e um único evento de auditoria.
+Validação final: **103 testes passando** em ambos os ciclos completos do script
+PostgreSQL, sem skips, Alembic sem diferenças. `git diff --check` limpo.
+Sem outros apontamentos acionáveis; a correção foi verificada por RED→GREEN,
+sem segunda rodada de revisão. Decisões: usuários são inativados e vínculos
+idempotentes; o Administrador gere vínculos globalmente mas precisa de vínculo
+para dados; rotas e schema de resposta de empresas antecipados para testes HTTP;
+alterar senha preserva sessões. Paginação, normalização de e-mail e recuperação
+de conta ficam para definição posterior; bootstrap na Task 6 e CRUD operacional
+na Task 5. Essas decisões mantêm comparação exata de e-mail, listas sem paginação
+e ausência de recuperação autônoma de conta nesta entrega.
+
 ### Task 5: Companies and employees CRUD
 
 **Files:**

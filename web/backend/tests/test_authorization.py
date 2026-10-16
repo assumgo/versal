@@ -295,3 +295,41 @@ async def test_audit_failure_rolls_back_administration_changes(
     memberships = admin_db.scalars(select(UserCompany).where(UserCompany.user_id == target_id)).all()
     assert [row.company_id for row in memberships] == [accounts[1][0].id]
     assert admin_db.scalars(select(AuditLog)).all() == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('method,changes', [
+    ('DELETE', None), ('PATCH', {'is_active': False}), ('PATCH', {'role': 'Consulta'}),
+])
+async def test_last_active_administrator_cannot_remove_own_access(client, accounts, admin_db, method, changes):
+    administrator = accounts[0]['Administrador']
+    # An inactive administrator must not count as an available replacement.
+    admin_db.add(User(email='inactive-admin@authorization.test', role=administrator.role,
+                      password_hash=hash_password(PASSWORD), is_active=False))
+    admin_db.commit()
+    async with client:
+        response = await client.request(method, f'{USERS}/{administrator.id}', json=changes,
+                                        headers=headers(accounts))
+        assert response.status_code == 409, response.text
+        assert (await client.get(USERS, headers=headers(accounts))).status_code == 200
+    assert admin_db.get(User, administrator.id).is_active
+    assert admin_db.get(User, administrator.id).role.name == 'Administrador'
+    assert admin_db.scalars(select(AuditLog)).all() == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('method,changes', [
+    ('DELETE', None), ('PATCH', {'is_active': False}), ('PATCH', {'role': 'Consulta'}),
+])
+async def test_administrator_can_remove_own_access_when_another_remains(
+    client, accounts, admin_db, method, changes,
+):
+    administrator = accounts[0]['Administrador']
+    admin_db.add(User(email='replacement-admin@authorization.test', role=administrator.role,
+                      password_hash=hash_password(PASSWORD), is_active=True))
+    admin_db.commit()
+    async with client:
+        response = await client.request(method, f'{USERS}/{administrator.id}', json=changes,
+                                        headers=headers(accounts))
+    assert response.status_code == (204 if method == 'DELETE' else 200)
+    assert len(admin_db.scalars(select(AuditLog)).all()) == 1

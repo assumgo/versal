@@ -197,6 +197,10 @@ retorna `403` quando o ID não existe, sem revelar sua existência. Alvos inexis
 na administração retornam `404`. Papel, atividade e vínculos são consultados no
 servidor a cada requisição, incluindo requisições com access tokens anteriores
 à alteração. Mudanças de senha preservam sessões existentes.
+Alterar papel ou inativar o último administrador ativo retorna `409`, sem
+alteração nem auditoria. Administradores inativos não contam como substitutos.
+Essa verificação é serializada no PostgreSQL para impedir que duas mudanças
+concorrentes eliminem todo acesso administrativo.
 
 Cada alteração administrativa é confirmada junto com sua auditoria (ator, IP,
 entidade e empresa quando aplicável), sem senhas ou hashes. Falha na auditoria

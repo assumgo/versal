@@ -25,6 +25,23 @@ def _role(db: Session, name: str) -> Role:
     return role
 
 
+def _lock_administrators(db: Session) -> None:
+    # Lock a common row BEFORE target-user locks. Locking separate users alone
+    # would allow two administrators to remove their access simultaneously.
+    db.scalar(select(Role).where(Role.name == 'Administrador').with_for_update())
+
+
+def _preserve_administrator(db: Session, user: User, *, role: str, is_active: bool) -> None:
+    if not user.is_active or user.role.name != 'Administrador':
+        return
+    if is_active and role == 'Administrador':
+        return
+    replacement = db.scalar(select(User.id).where(
+        User.role_id == user.role_id, User.is_active.is_(True), User.id != user.id).limit(1))
+    if replacement is None:
+        raise HTTPException(status_code=409, detail='É necessário manter um administrador ativo')
+
+
 def _save(db: Session, *, actor: User, action: str, entity: str, row: User | UserCompany,
           ip_address: str | None, company_id: int | None = None, details: dict | None = None) -> None:
     try:
@@ -49,9 +66,13 @@ def create_user(db: Session, payload: UserCreate, actor: User, ip: str | None) -
 
 
 def update_user(db: Session, user_id: int, payload: UserUpdate, actor: User, ip: str | None) -> User:
+    _lock_administrators(db)
     user = find_user(db, user_id, lock=True)
     # Resolve the role before changing any fields, preventing partial validation writes.
     role = _role(db, payload.role) if 'role' in payload.model_fields_set else None
+    _preserve_administrator(db, user, role=role.name if role else user.role.name,
+                            is_active=payload.is_active if 'is_active' in payload.model_fields_set
+                            else user.is_active)
     for field in payload.model_fields_set:
         if field == 'role':
             user.role = role
@@ -65,8 +86,10 @@ def update_user(db: Session, user_id: int, payload: UserUpdate, actor: User, ip:
 
 
 def inactivate_user(db: Session, user_id: int, actor: User, ip: str | None) -> None:
+    _lock_administrators(db)
     user = find_user(db, user_id, lock=True)
     if user.is_active:
+        _preserve_administrator(db, user, role=user.role.name, is_active=False)
         user.is_active = False
         _save(db, actor=actor, action='user.inactivate', entity='users', row=user, ip_address=ip)
 
