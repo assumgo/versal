@@ -313,11 +313,41 @@ Código original e banco operacional não alterados.
 **Interfaces:**
 - Produces: explicit development-only bootstrap command and FastAPI OpenAPI at `/docs`.
 
-- [ ] **Step 1: Write failing test** asserting documented auth, company and employee paths appear in OpenAPI.
-- [ ] **Step 2: Run** `pytest tests/test_openapi.py -v`; expect failure before route registration.
-- [ ] **Step 3: Register routers, CORS from settings and a seed command requiring environment-provided first-admin credentials.** Never embed a default password.
-- [ ] **Step 4: Run** `pytest -q`; expect all backend tests PASS.
-- [ ] **Step 5: Commit** `feat: document API and development bootstrap`.
+- [x] **Step 1: Write failing test** asserting documented auth, company and employee paths appear in OpenAPI.
+- [x] **Step 2: Verify existing routes and observe RED for missing functionality.** O contrato OpenAPI já passou, pois as rotas foram registradas nas Tasks 3–5. RED comprovado para CORS e bootstrap na suíte completa; não houve falha de registro de rotas.
+- [x] **Step 3: Register routers, CORS from settings and a seed command requiring environment-provided first-admin credentials.** Never embed a default password.
+- [x] **Step 4: Run** `pytest -q`; expect all backend tests PASS.
+- [x] **Step 5: Commit** `feat: document API and development bootstrap`.
+
+**Status em 2026-10-16:** Task 6 implementada na branch `feat/backend-bootstrap`.
+Contrato OpenAPI cobre autenticação, usuários/vínculos, empresas e colaboradores,
+com Bearer nas operações protegidas e `/docs` acessível. Rotas preexistentes
+preservadas. CORS usa `FRONTEND_ORIGINS` separado por vírgulas, credenciais,
+métodos da API e Authorization/Content-Type; origens com wildcard ou caminho
+são rejeitadas na configuração. Lista vazia desabilita acesso entre origens.
+
+Bootstrap explícito: `python -m app.scripts.seed_admin`, somente com
+`ENVIRONMENT=development`, `FIRST_ADMIN_EMAIL` e `FIRST_ADMIN_PASSWORD` no ambiente.
+Validação segue cadastro (senha de 12–1024 caracteres); sem senha padrão.
+Cria os quatro papéis e primeiro administrador ativo com Argon2id, junto da
+auditoria sem credenciais. Advisory lock serializa execuções do comando.
+Repetir para o mesmo administrador ativo preserva senha/auditoria; não promove,
+reativa ou cria nova conta quando já existem usuários. Sem empresas/vínculos
+automáticos, sem execução no startup e sem alteração de modelos/migrações.
+Essa restrição exige administração autenticada para contas posteriores e não
+oferece recuperação de conta. Guia em `web/backend/README.md`, com comandos
+locais/Compose; referências antigas ao bootstrap futuro corrigidas em `web/README.md`.
+
+RED: **15 falhas e 138 passando** (CORS ausente e módulo de bootstrap inexistente);
+validação de origens observada separadamente em RED (**3 falhas e 5 passando**).
+Verificação final: `sg docker -c 'bash web/backend/tests/run_postgres.sh'`,
+**156 testes passando nos dois ciclos**, sem skips; upgrade/check/downgrade/schema
+vazio/reupgrade/check concluídos, Alembic sem diferenças. `git diff --check` limpo.
+Revisão independente sem problemas críticos/importantes; esclarecimento textual
+sobre repetição do bootstrap incorporado. Cobertura concorrente com conexões
+independentes fica como melhoria opcional; o bloqueio está implementado, mas
+esse comportamento não foi comprovado por teste concorrente nesta entrega.
+Banco operacional não alterado ou populado. Somente Task 6 neste escopo.
 
 ### Task 7: React application shell and design system
 
