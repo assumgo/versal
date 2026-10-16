@@ -141,16 +141,23 @@ Com Docker, na pasta `web/`, reconstrua a imagem e confira as migrações. Monte
 pasta da origem inteira como somente leitura para incluir WAL/SHM:
 
 ```bash
-docker compose build backend
+docker compose build backend migrate
+docker compose up -d --wait db
 docker compose run --rm migrate
-docker compose run --rm \
+docker compose run --rm --no-deps \
   -v /home/gabriel/Downloads/VersalFolhaTXT:/migration:ro \
   backend python -m app.scripts.migrate_sqlite --source /migration/versal_folha.db
 ```
 
-Para gravar, repita o último comando adicionando `--apply`. Para salvar o relatório
-no host, crie antes uma pasta privada fora do repositório e acrescente um volume
-`-v /caminho/relatorios:/reports` e `--report /reports/nome-novo.json`.
+Para gravar, repita o último comando adicionando `--apply`.
+O [guia da instância de conversão](../docs/local-conversion-instance.md) apresenta
+subida completa, backup, relatórios, administrador e vínculo com a empresa.
+
+Relatórios criados num volume pelo usuário do container podem ficar com proprietário
+diferente no host e permissão 0600, impedindo sua leitura. O guia cria o relatório
+dentro do container e o recupera por stdout para um arquivo privado criado pelo
+usuário do host. Não abra as permissões para todos nem repita uma carga já
+confirmada para tentar recuperar seu relatório.
 A configuração de banco do Compose já usa o hostname interno `db`; uma execução
 Python no host precisa de um endereço PostgreSQL acessível pelo host.
 

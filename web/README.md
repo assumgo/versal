@@ -53,6 +53,9 @@ O volume `postgres_data` preserva os dados ao parar a stack. Alterar a senha em
 `.env` depois da primeira inicialização não altera a senha do banco já criado.
 Este Compose serve ao desenvolvimento local; o frontend usa o servidor do Vite.
 
+Para uma instância separada com conversão do SQLite, veja o
+[guia de conversão e primeiro acesso](docs/local-conversion-instance.md).
+
 ## Backend sem Docker
 
 Na pasta `web/backend/`:
