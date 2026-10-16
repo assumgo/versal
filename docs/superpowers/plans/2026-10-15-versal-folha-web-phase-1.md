@@ -15,6 +15,7 @@
 - Criar todo produto novo sob `web/`; não alterar `C:\Folhas2_18\versal_folha_txt_v2_18`.
 - Usar PostgreSQL, SQLAlchemy 2.x e Alembic; valores monetários são `NUMERIC`.
 - Não versionar segredos, senhas, tokens reais ou bancos de dados.
+- Preservar as sete tabelas operacionais do desktop: campos e nomes originais, IDs/FKs inteiros de 64 bits e competência textual; detalhes na revisão de compatibilidade da spec.
 - Usar Argon2, refresh token rotativo/revogável com hash persistido e cookie `HttpOnly`.
 - Validar papel e `user_companies` no servidor em toda operação por empresa.
 - Preservar logo/ícone e tokens visuais `#315f2f`, `#89bf21`, `#f7faf5`, `#cfdccc`.
@@ -86,11 +87,28 @@ desta entrega.
 - Produces: SQLAlchemy metadata and `get_db() -> Generator[Session, None, None]`.
 - Produces: initial tables `roles`, `users`, `user_companies`, `companies`, `employees`, `rubrics`, `chart_accounts`, `finance_params`, `imports`, `payroll_lines`, `stored_files`, `audit_logs`, `refresh_tokens`.
 
-- [ ] **Step 1: Write model tests** for foreign keys, unique role name, unique user email, unique company membership and `Numeric` payroll value.
-- [ ] **Step 2: Run** `pytest tests/test_models.py -v`; expect imports to fail.
-- [ ] **Step 3: Implement declarative models, relationships, UTC timestamps, company/competência indexes and Alembic initial revision.** Keep entities focused by module.
-- [ ] **Step 4: Run** `alembic upgrade head` against disposable PostgreSQL and `pytest tests/test_models.py -v`; expect PASS.
-- [ ] **Step 5: Commit** `feat: add PostgreSQL schema and Alembic migration`.
+- [x] **Step 1: Write model tests** for foreign keys, unique role name, unique user email, unique company membership and `Numeric` payroll value.
+- [x] **Step 2: Run** `pytest tests/test_models.py -v`; expect imports to fail.
+- [x] **Step 3: Implement declarative models, relationships, UTC timestamps, company/competência indexes and Alembic initial revision.** Keep entities focused by module.
+- [x] **Step 4: Run** `alembic upgrade head` against disposable PostgreSQL and `pytest tests/test_models.py -v`; expect PASS.
+- [x] **Step 5: Commit** `feat: add PostgreSQL schema and Alembic migration`.
+
+**Status em 2026-10-16:** etapa 2 implementada na pasta atual, branch
+`feat/database-foundation`. Revisão solicitada pelo usuário após consultar o
+código original: as sete tabelas operacionais mantêm seus campos/nomes originais,
+IDs/FKs inteiros de 64 bits e competência textual. PKs `IDENTITY BY DEFAULT`
+permitem importar IDs sem renumerar. Campos históricos de folha e parâmetros
+financeiros/contábeis preservados; tabelas multiusuário adicionadas separadamente.
+A migração inicial `0001` foi corrigida enquanto o PR #2 permanecia aberto;
+a versão UUID anterior só havia sido aplicada em bancos descartáveis.
+Testes usam o DDL SQLite original sem dados reais e registros sintéticos para
+verificar cópia, IDs/vínculos preservados e continuidade da sequência.
+Verificação final com `bash web/backend/tests/run_postgres.sh`: **31 testes
+passando** antes e depois da reversão/reaplicação, `alembic check` sem diferenças
+nos dois ciclos. `valor`/`liquido` preservam NUMERIC sem escala fixa, com testes
+para mais de duas casas e valores grandes. Revisão independente aprovada sem
+apontamentos, comparando a fixture com o código original. Banco da aplicação e
+arquivos originais não alterados; nenhuma migração de dados reais executada.
 
 ### Task 3: Authentication, roles and audit service
 
@@ -115,7 +133,7 @@ desta entrega.
 - Create: `web/backend/tests/test_authorization.py`
 
 **Interfaces:**
-- Produces: `require_roles(*names: str)`, `require_company_access(company_id: UUID, user: User)`, and admin user/company membership endpoints.
+- Produces: `require_roles(*names: str)`, `require_company_access(company_id: int, user: User)`, and admin user/company membership endpoints.
 
 - [ ] **Step 1: Write failing tests** that an Administrator can create a user and grant company access, while Consulta cannot write and a linked user cannot see a second company.
 - [ ] **Step 2: Run** `pytest tests/test_authorization.py -v`; expect failure before dependencies/routes.

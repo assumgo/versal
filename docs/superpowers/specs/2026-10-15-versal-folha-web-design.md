@@ -34,6 +34,25 @@ O backend será organizado em `api`, `core`, `models`, `schemas`, `services`, `r
 
 As tabelas operacionais possuem chaves estrangeiras para empresa, timestamps UTC e índices para empresa/competência. Empresas são inativadas em vez de removidas quando houver histórico.
 
+## Compatibilidade com o desktop (revisão de 2026-10-16)
+
+Por solicitação do usuário, preservar os IDs inteiros e os relacionamentos do
+banco original na futura migração. A definição de referência é o método `DB.init()`
+do `app.py` original, com DDL sem dados reais em
+`web/backend/tests/fixtures/legacy_schema.sql`.
+
+As sete tabelas operacionais mantêm seus nomes de colunas, campos de negócio,
+textos, status, nulabilidade e ausência de unicidade não prevista no desktop.
+IDs e FKs usam inteiros de 64 bits; PKs geram novos valores e aceitam inserção
+explícita dos IDs antigos. Competência permanece textual em `imports.competencia`;
+`payroll_lines` mantém seus dados históricos e `import_id`, sem exigir novos
+vínculos com `employees` ou `rubrics`. Recursos multiusuário são tabelas adicionais.
+
+As FKs novas preservam integridade, sem renumerar os dados; referências órfãs ou
+inconsistentes devem ser diagnosticadas antes de uma importação real. A importação
+sincronizará as sequências após carregar os IDs. A fase atual testa equivalência
+estrutural e cópia sintética; não executa a migração de dados do cliente.
+
 ## Papéis
 
 - **Administrador:** usuários, papéis, empresas, permissões e backup.
