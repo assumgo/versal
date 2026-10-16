@@ -135,10 +135,44 @@ banco operacional como banco de testes. O gerador `get_db()` encerra a sessão e
 reverte alterações não confirmadas; os futuros serviços serão responsáveis por
 confirmar explicitamente as transações.
 
+## Autenticação
+
+As rotas `/api/v1/auth` aceitam JSON e estão documentadas em `/docs`:
+
+- `POST /login`: recebe `{"email":"usuario@example.com","password":"..."}` e
+  retorna `access_token` e `token_type: "bearer"`.
+- `GET /me`: recebe `Authorization: Bearer <access_token>` e retorna
+  `id`, `email`, `role` e `is_active`, sem hashes ou tokens de sessão.
+- `POST /refresh`: usa o cookie para emitir um novo access token e rotacionar
+  o refresh token. O token anterior deixa de ser válido.
+- `POST /logout`: revoga a família da sessão e apaga o cookie; retorna `204`.
+
+Senhas usam Argon2id. Access tokens duram 15 minutos por padrão; refresh tokens,
+7 dias, conforme `ACCESS_TOKEN_EXPIRE_MINUTES` e `REFRESH_TOKEN_EXPIRE_DAYS`.
+O refresh token é opaco e somente seu hash SHA-256 é armazenado no banco.
+Ele nunca aparece no JSON: fica no cookie `refresh_token`, com `HttpOnly`,
+`SameSite=Lax` e caminho `/api/v1/auth`. Com `ENVIRONMENT=production`, o cookie
+exige HTTPS (`Secure`). No frontend, usar `credentials: 'include'` e guardar
+apenas o access token em memória; a integração do frontend/CORS é etapa futura.
+
+Reutilizar um refresh revogado invalida toda sua família. Usuários inativos
+não podem entrar, renovar sessão ou acessar `/me`. Logout não revoga JWTs já
+emitidos: eles expiram no prazo configurado. Login, refresh, logout e reutilização
+são auditados sem credenciais, na mesma transação das alterações de sessão.
+As operações de refresh/logout são serializadas por usuário no PostgreSQL.
+`tests/test_auth_concurrency.py` verifica refresh/refresh e ambas as ordens de
+refresh/logout com requisições e conexões independentes, observando o bloqueio
+real no PostgreSQL. O script `tests/run_postgres.sh` inclui esses testes. Eles
+confirmam respostas, auditoria, revogação persistida e rejeição dos sucessores.
+
+Ainda não há cadastro público nem comando de criação do primeiro administrador;
+o bootstrap está previsto na Task 6. Os testes usam contas sintéticas e banco
+descartável. A stack operacional não foi migrada ou populada nesta etapa.
+
 ## Próximas etapas
 
-Autenticação, autorização por empresa,
+Autorização por empresa,
 cadastros e interface operacional seguem o plano em
 `../docs/superpowers/plans/2026-10-15-versal-folha-web-phase-1.md`.
-Os modelos e a migração inicial estão implementados. Login e importação/exportação
-TXT seguem nas próximas etapas.
+Os modelos, a migração inicial e os endpoints de autenticação estão implementados.
+A integração de sessão no frontend e importação/exportação TXT seguem nas próximas etapas.
