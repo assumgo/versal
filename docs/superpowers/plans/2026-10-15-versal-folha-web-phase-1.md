@@ -86,11 +86,24 @@ desta entrega.
 - Produces: SQLAlchemy metadata and `get_db() -> Generator[Session, None, None]`.
 - Produces: initial tables `roles`, `users`, `user_companies`, `companies`, `employees`, `rubrics`, `chart_accounts`, `finance_params`, `imports`, `payroll_lines`, `stored_files`, `audit_logs`, `refresh_tokens`.
 
-- [ ] **Step 1: Write model tests** for foreign keys, unique role name, unique user email, unique company membership and `Numeric` payroll value.
-- [ ] **Step 2: Run** `pytest tests/test_models.py -v`; expect imports to fail.
-- [ ] **Step 3: Implement declarative models, relationships, UTC timestamps, company/competência indexes and Alembic initial revision.** Keep entities focused by module.
-- [ ] **Step 4: Run** `alembic upgrade head` against disposable PostgreSQL and `pytest tests/test_models.py -v`; expect PASS.
-- [ ] **Step 5: Commit** `feat: add PostgreSQL schema and Alembic migration`.
+- [x] **Step 1: Write model tests** for foreign keys, unique role name, unique user email, unique company membership and `Numeric` payroll value.
+- [x] **Step 2: Run** `pytest tests/test_models.py -v`; expect imports to fail.
+- [x] **Step 3: Implement declarative models, relationships, UTC timestamps, company/competência indexes and Alembic initial revision.** Keep entities focused by module.
+- [x] **Step 4: Run** `alembic upgrade head` against disposable PostgreSQL and `pytest tests/test_models.py -v`; expect PASS.
+- [x] **Step 5: Commit** `feat: add PostgreSQL schema and Alembic migration`.
+
+**Status em 2026-10-16:** etapa 2 implementada na pasta atual, branch
+`feat/database-foundation`. Treze tabelas SQLAlchemy, sessões síncronas e migração
+estática Alembic `0001`; UUIDs, timestamps com timezone, valores `NUMERIC(18,2)` e
+competências como primeiro dia do mês. FKs restritivas preservam histórico;
+FKs compostas impedem referências operacionais entre empresas.
+Teste inicial observado falhando pela ausência de `app.models`. Verificação final
+com `bash web/backend/tests/run_postgres.sh`: **21 testes passando** antes e depois
+da reversão/reaplicação; `alembic check` sem diferenças nas duas verificações.
+PostgreSQL 16 temporário removido automaticamente; banco da aplicação não alterado.
+Revisão independente estática aprovada sem apontamentos. README documenta migrações,
+testes e decisões de esquema. Login, serviços e validação de CPF/CNPJ seguem fora
+desta etapa.
 
 ### Task 3: Authentication, roles and audit service
 

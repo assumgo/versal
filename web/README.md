@@ -27,7 +27,7 @@ curl --fail http://localhost:8000/health
 Frontend: http://localhost:5173. API: http://localhost:8000.
 Documentação OpenAPI: http://localhost:8000/docs.
 O health check retorna `{"status":"ok"}` e verifica apenas a disponibilidade HTTP;
-nesta etapa a API ainda não acessa o banco.
+a rota de saúde não acessa o banco. As tabelas são criadas explicitamente com Alembic.
 
 ```bash
 docker compose logs -f
@@ -57,7 +57,8 @@ do PostgreSQL disponível no seu ambiente. O Compose não publica a porta do ban
 .venv/bin/python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Os testes usam uma chave exclusiva de teste e não precisam de banco nesta etapa.
+Os testes usam uma chave exclusiva de teste. Sem `TEST_DATABASE_URL`, os testes de
+integração PostgreSQL são pulados; configuração, saúde e metadados continuam verificáveis.
 
 ## Frontend sem Docker
 
@@ -79,9 +80,56 @@ npm run build
 página inicial ainda não faz requisições. Variáveis `VITE_*` são públicas e não
 devem conter segredos.
 
+## Banco de dados e migrações
+
+A migração `0001` cria as 13 tabelas da fundação. Não há criação automática de
+esquema ao iniciar a API. Após configurar o ambiente, execute na pasta `web/`:
+
+```bash
+docker compose build backend
+docker compose run --rm backend python -m alembic upgrade head
+docker compose run --rm backend python -m alembic current
+```
+
+Sem Docker, na pasta `web/backend/`, com `DATABASE_URL` e `JWT_SECRET_KEY`
+configurados no ambiente ou no `.env`:
+
+```bash
+.venv/bin/python -m alembic upgrade head
+.venv/bin/python -m alembic check
+```
+
+Os identificadores são UUID, timestamps usam timezone e valores monetários são
+`NUMERIC(18,2)`/`Decimal`. Competências usam o primeiro dia do mês (`2026-10-01`).
+As chaves estrangeiras preservam histórico por `RESTRICT`; empresas e colaboradores
+possuem `is_active` para a futura inativação. Referências de folha e arquivos de
+importação devem pertencer à mesma empresa. CPF/CNPJ serão validados pelos serviços
+na etapa de cadastros; nesta etapa são armazenados sem pontuação.
+
+A migração é estática e reversível. `downgrade base` remove as tabelas e seus dados;
+use essa reversão somente em ambientes descartáveis.
+
+Para verificar migração, reversão, reaplicação e todos os testes contra PostgreSQL
+16 descartável, sem alterar o banco da aplicação, execute na raiz do repositório
+(com Docker disponível e a `.venv` do backend preparada):
+
+```bash
+bash web/backend/tests/run_postgres.sh
+```
+
+O script usa porta local dinâmica e armazenamento temporário, removendo o container
+ao terminar. Para outro Python, defina `PYTHON_BIN` com caminho absoluto.
+Também é possível testar contra um banco de testes já migrado com
+`TEST_DATABASE_URL=postgresql+psycopg://... .venv/bin/python -m pytest -q`.
+Cada teste de integração desfaz suas alterações em uma transação; nunca use o
+banco operacional como banco de testes. O gerador `get_db()` encerra a sessão e
+reverte alterações não confirmadas; os futuros serviços serão responsáveis por
+confirmar explicitamente as transações.
+
 ## Próximas etapas
 
-Modelos SQLAlchemy e migrações Alembic, autenticação, autorização por empresa,
+Autenticação, autorização por empresa,
 cadastros e interface operacional seguem o plano em
 `../docs/superpowers/plans/2026-10-15-versal-folha-web-phase-1.md`.
-Ainda não há tabelas, login, migrações ou importação/exportação TXT.
+Os modelos e a migração inicial estão implementados. Login e importação/exportação
+TXT seguem nas próximas etapas.
