@@ -12,18 +12,27 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-  backend:
+  migrate:
     build: ./backend
-    environment:
+    environment: &backend_environment
       ENVIRONMENT: development
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-versal}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-versal_folha}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Defina JWT_SECRET_KEY em web/.env}
-      FRONTEND_ORIGINS: http://localhost:5173
-    ports:
-      - "127.0.0.1:8000:8000"
+      FRONTEND_ORIGINS: http://localhost:${FRONTEND_PORT:-5173}
+    command: ["python", "-m", "alembic", "upgrade", "head"]
     depends_on:
       db:
         condition: service_healthy
+  backend:
+    build: ./backend
+    environment: *backend_environment
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 5s
@@ -32,11 +41,16 @@ services:
   frontend:
     build: ./frontend
     environment:
-      VITE_API_BASE_URL: http://localhost:8000/api/v1
+      VITE_API_BASE_URL: http://localhost:${BACKEND_PORT:-8000}/api/v1
     ports:
-      - "127.0.0.1:5173:5173"
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:5173"
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5173/').then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 volumes:
   postgres_data:

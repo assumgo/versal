@@ -19,15 +19,30 @@ em senhas exigem codificação na URL do PostgreSQL. Não versione `.env`.
 
 ```bash
 docker compose config --quiet
-docker compose up --build -d
-docker compose ps
-curl --fail http://localhost:8000/health
+docker compose up --build -d --wait --wait-timeout 180
+bash tests/smoke_compose.sh
 ```
 
 Frontend: http://localhost:5173. API: http://localhost:8000.
 Documentação OpenAPI: http://localhost:8000/docs.
 O health check retorna `{"status":"ok"}` e verifica apenas a disponibilidade HTTP;
-a rota de saúde não acessa o banco. As tabelas são criadas explicitamente com Alembic.
+a rota de saúde não acessa o banco. O serviço `migrate` executa Alembic após o
+PostgreSQL ficar saudável; a API aguarda sua conclusão e o frontend aguarda a API.
+`migrate` terminar com código 0 é esperado. Falha de migração bloqueia a API;
+consulte `docker compose logs migrate` e corrija a causa antes de repetir a subida.
+O smoke aguarda os três serviços saudáveis, confere a revisão Alembic no banco e
+consulta `/health` e o HTML do frontend pelas portas publicadas. Requer Bash,
+Python 3 e Docker no host; não cria usuários nem altera dados.
+
+Use `http://localhost:5173` no navegador, mantendo o mesmo hostname da API para
+cookies e CORS. `BACKEND_PORT` e `FRONTEND_PORT` podem ser definidos em `.env`
+para evitar conflitos (padrões 8000 e 5173); a URL pública da API e a origem CORS
+acompanham essas portas. Dentro da rede Compose, a API acessa `db:5432`; o
+navegador acessa `localhost`, não os nomes internos dos serviços.
+
+Após subir, crie o primeiro administrador seguindo o
+[bootstrap explícito](backend/README.md#primeiro-administrador-de-desenvolvimento).
+Nenhuma conta ou senha padrão é criada automaticamente.
 
 ```bash
 docker compose logs -f
@@ -76,19 +91,21 @@ Para verificar TypeScript e gerar os arquivos estáticos:
 npm run build
 ```
 
-`VITE_API_BASE_URL` reserva a configuração da futura integração com a API; a
-página inicial ainda não faz requisições. Variáveis `VITE_*` são públicas e não
+Execute `npm test -- --run` para os testes de componentes e sessão.
+`npm run test:e2e` verifica o shell responsivo com Playwright (requer seus navegadores).
+
+`VITE_API_BASE_URL` aponta para a API consumida pela sessão e pelos cadastros. Variáveis `VITE_*` são públicas e não
 devem conter segredos.
 
 ## Banco de dados e migrações
 
-A migração `0001` cria as 13 tabelas da fundação. Não há criação automática de
-esquema ao iniciar a API. Após configurar o ambiente, execute na pasta `web/`:
+A migração `0001` cria as 13 tabelas da fundação. O processo da API não cria tabelas. A subida Compose aplica as migrações pelo
+serviço `migrate`; para conferir ou reaplicar explicitamente, na pasta `web/`:
 
 ```bash
-docker compose build backend
-docker compose run --rm backend python -m alembic upgrade head
-docker compose run --rm backend python -m alembic current
+docker compose build migrate
+docker compose run --rm migrate
+docker compose exec backend python -m alembic current
 ```
 
 Sem Docker, na pasta `web/backend/`, com `DATABASE_URL` e `JWT_SECRET_KEY`
@@ -132,8 +149,7 @@ Também é possível testar contra um banco de testes já migrado com
 `TEST_DATABASE_URL=postgresql+psycopg://... .venv/bin/python -m pytest -q`.
 Cada teste de integração desfaz suas alterações em uma transação; nunca use o
 banco operacional como banco de testes. O gerador `get_db()` encerra a sessão e
-reverte alterações não confirmadas; os futuros serviços serão responsáveis por
-confirmar explicitamente as transações.
+reverte alterações não confirmadas; os serviços confirmam explicitamente suas transações.
 
 ## Autenticação
 
@@ -154,7 +170,7 @@ Ele nunca aparece no JSON: fica no cookie `refresh_token`, com `HttpOnly`,
 `SameSite=Lax` e caminho `/api/v1/auth`. Com `ENVIRONMENT=production`, o cookie
 exige HTTPS (`Secure`). No frontend, usar `credentials: 'include'` e guardar
 apenas o access token em memória. CORS usa as origens explícitas de
-`FRONTEND_ORIGINS`, separadas por vírgula; a integração do frontend é etapa futura.
+`FRONTEND_ORIGINS`, separadas por vírgula; o frontend já usa esse fluxo de sessão.
 
 Reutilizar um refresh revogado invalida toda sua família. Usuários inativos
 não podem entrar, renovar sessão ou acessar `/me`. Logout não revoga JWTs já
@@ -207,13 +223,37 @@ concorrentes eliminem todo acesso administrativo.
 Cada alteração administrativa é confirmada junto com sua auditoria (ator, IP,
 entidade e empresa quando aplicável), sem senhas ou hashes. Falha na auditoria
 reverte a alteração; concessões e revogações sem mudança não criam eventos.
-Não há alteração de esquema nesta tarefa. Escrita de empresas e validação de
-CPF/CNPJ pertencem à Task 5.
+Empresas e colaboradores possuem CRUD com validação de CPF/CNPJ, escopo por
+empresa e auditoria transacional. A exclusão com histórico preserva os registros.
 
-## Próximas etapas
+## Estado e limites operacionais
 
-Cadastros de empresas/colaboradores e interface operacional seguem o plano em
-`../docs/superpowers/plans/2026-10-15-versal-folha-web-phase-1.md`.
-Os modelos, a migração inicial, autenticação e administração com escopo por
-empresa estão implementados.
-A integração de sessão no frontend e importação/exportação TXT seguem nas próximas etapas.
+Login, renovação de sessão, rotas protegidas e telas de Dashboard, Empresas e
+Colaboradores estão integrados. O token de acesso fica em memória; recarregar a
+página tenta renovar a sessão pelo cookie. Usuários e vínculos são administrados
+pela API. A competência do cabeçalho é uma seleção local; indicadores reais e
+listagem de competências ainda aguardam endpoints. Os demais módulos do menu
+apresentam sua indisponibilidade nesta fase.
+
+Este ambiente é local, sem TLS, servidor de produção ou backup operacional.
+Parser PDF/XLS/XLSX, importação completa, validação contábil completa, exportação
+TXT Siagri/Aliare, restauração e migração automática do SQLite não estão implementados.
+O desktop continua sendo o sistema operacional durante a conferência.
+
+Antes de extrair parsers ou exportadores, siga o
+[protocolo de equivalência](docs/parser-equivalence-strategy.md) e as
+[regras das fixtures](backend/tests/fixtures/README.md).
+A preservação de IDs, vínculos e sequências está detalhada no
+[contrato de esquema](docs/legacy-schema-compatibility.md).
+
+Para validar uma stack separada, escolha portas livres e um projeto exclusivo:
+
+```bash
+BACKEND_PORT=18000 FRONTEND_PORT=15173 docker compose -p versal-check up --build -d --wait --wait-timeout 180
+BACKEND_PORT=18000 FRONTEND_PORT=15173 bash tests/smoke_compose.sh -p versal-check
+docker compose -p versal-check down
+```
+
+Esse projeto tem seu próprio volume. `down` preserva os dados; use `down --volumes`
+somente para descartar um projeto de testes cujo conteúdo possa ser removido.
+Nunca execute testes ou reversões de migração contra o banco operacional.
