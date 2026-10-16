@@ -122,11 +122,64 @@ arquivos originais não alterados; nenhuma migração de dados reais executada.
 - Consumes: `User`, `Role`, `RefreshToken`, `get_db()`.
 - Produces: `authenticate(email: str, password: str) -> TokenPair`, `rotate_refresh(raw_token: str) -> TokenPair`, `revoke_refresh(raw_token: str) -> None`, `write_audit(...) -> AuditLog`.
 
-- [ ] **Step 1: Write failing tests** for Argon2 password verification, login, `/me`, refresh rotation, logout revocation and rejected reuse.
-- [ ] **Step 2: Run** `pytest tests/test_auth.py -v`; expect failure before routes/services.
-- [ ] **Step 3: Implement Argon2 hashing, JWT claims, opaque refresh token hashing, cookie attributes, auth router and `/me`.** Do not return refresh tokens in JSON.
-- [ ] **Step 4: Run** `pytest tests/test_auth.py -v`; expect PASS.
-- [ ] **Step 5: Commit** `feat: add secure authentication and audit service`.
+- [x] **Step 1: Write failing tests** for Argon2 password verification, login, `/me`, refresh rotation, logout revocation and rejected reuse.
+- [x] **Step 2: Run** `pytest tests/test_auth.py -v`; expect failure before routes/services. Executado com `-q` em vez de `-v`; ver evidência abaixo.
+- [x] **Step 3: Implement Argon2 hashing, JWT claims, opaque refresh token hashing, cookie attributes, auth router and `/me`.** Do not return refresh tokens in JSON.
+- [x] **Step 4: Run** `pytest tests/test_auth.py -v`; expect PASS. Verificado pela suíte completa com `-q` no script PostgreSQL.
+- [x] **Step 5: Commit** `feat: add secure authentication and audit service`.
+
+**Status em 2026-10-16 (somente testes):** `tests/test_auth.py` criado com
+21 casos, incluindo credenciais inválidas, usuário inativo, JWT vencido/forjado,
+cookie HttpOnly/SameSite e Secure em produção, persistência do hash de refresh,
+rotação, expiração, revogação, rejeição de reutilização e logout.
+Execução final via `bash web/backend/tests/run_postgres.sh` em PostgreSQL
+descartável: **21 falhas esperadas e 31 testes existentes passando**, sem skips.
+Quatro falhas por ausência de `app.core.security`; as demais por rotas ainda
+inexistentes (HTTP 404). O script encerrou no pytest, sem executar os passos
+posteriores de reversão/reaplicação. Código de produção não alterado;
+Naquele momento, Steps 3–5 permaneciam pendentes.
+
+**Status em 2026-10-16 (implementação):** endpoints de login, refresh, logout e
+`/me`, Argon2id, JWT HS256, schemas e serviço de auditoria implementados.
+Serviços recebem `Session` explicitamente como primeiro argumento, sem sessão
+global. Roteador de autenticação registrado já nesta task para exercitar a API;
+CORS, demais roteadores e bootstrap do administrador continuam na Task 6.
+Refresh é opaco, persistido somente como SHA-256, com rotação e cookie HttpOnly,
+SameSite=Lax e Secure em produção. Bloqueio por usuário serializa rotação/logout;
+reutilização revoga a família e confirma a revogação antes de responder `401`.
+Usuários inativos não autenticam, renovam ou acessam `/me`. Eventos de sessão
+são auditados na mesma transação. Logout preserva a validade dos access tokens
+já emitidos até sua expiração.
+
+Três novos testes observados em RED antes da implementação cobrem revogação da
+família, usuário inativo e auditoria sem segredos: **24 falhas e 31 passando**.
+Revisão independente não identificou bloqueadores na lógica de sessão; indicou
+exposição de senha em erro de validação e falta de testes concorrentes.
+A exposição foi tratada como relevante e reproduzida por teste de API
+(**1 falha e 55 passando**), depois corrigida removendo input/context das
+respostas de validação. Testes com sessões concorrentes independentes continuam
+como melhoria de cobertura, não como comportamento comprovado pela suíte atual.
+Verificação final: `bash web/backend/tests/run_postgres.sh`, **56 testes passando**
+antes e depois de downgrade/reaplicação, sem skips, com `alembic check` sem
+diferenças nos dois ciclos. Banco operacional e esquema não alterados.
+Implementação e testes concluídos; entrega na branch `feat/secure-authentication`
+com o commit `feat: add secure authentication and audit service`.
+
+**Cobertura complementar de concorrência em 2026-10-16:** adicionados três
+cenários em `tests/test_auth_concurrency.py`: refresh/refresh, refresh/logout e
+logout/refresh. Cada requisição usa sessão/conexão própria; uma conexão
+observadora confirma via `pg_blocking_pids` que a segunda requisição aguarda a
+primeira antes de liberar sua execução. Verificados status HTTP, quantidade de
+tokens, revogação de toda a família, auditoria e rejeição dos tokens sucessores.
+As contas sintéticas são confirmadas para visibilidade entre conexões e
+removidas ao final com filtros por usuário. Esperas e consultas têm limites.
+
+Verificação inicial com PostgreSQL descartável: **59 testes passando** antes e
+depois de reversão/reaplicação, sem diferenças no Alembic. Verificação de mutação
+em processo separado, substituindo `Select.with_for_update` por uma operação
+sem bloqueio: **os três novos casos falharam** por ausência de bloqueio real.
+Nenhum arquivo de produção foi alterado para essa verificação. A lacuna de
+cobertura de concorrência citada na revisão anterior foi atendida.
 
 ### Task 4: Authorization and user/company administration
 
