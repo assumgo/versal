@@ -432,11 +432,24 @@ sem alteração de backend, esquema ou banco operacional. Task 9 fora do escopo.
 **Interfaces:**
 - Produces: one-command local stack documentation and a parser/export equivalence protocol.
 
-- [ ] **Step 1: Write a failing smoke test/script** that waits for Compose health and calls `/health`.
-- [ ] **Step 2: Run** the smoke script; expect failure before final service wiring.
-- [ ] **Step 3: Finish Compose networking, health checks and README instructions for environment, migrations, tests, Docker and operational limitations.** Write fixture anonymization and comparison criteria for parsers/TXT.
-- [ ] **Step 4: Run** backend tests, frontend tests/build, `docker compose up --build`, smoke test and `docker compose down`; expect PASS.
-- [ ] **Step 5: Commit** `docs: add local setup and parser equivalence strategy`.
+- [x] **Step 1: Write a failing smoke test/script** that waits for Compose health and calls `/health`.
+- [x] **Step 2: Run** the smoke script; expect failure before final service wiring.
+- [x] **Step 3: Finish Compose networking, health checks and README instructions for environment, migrations, tests, Docker and operational limitations.** Write fixture anonymization and comparison criteria for parsers/TXT.
+- [x] **Step 4: Run** backend tests, frontend tests/build, `docker compose up --build`, smoke test and `docker compose down`; expect PASS.
+- [x] **Step 5: Commit** `docs: add local setup and parser equivalence strategy`.
+
+**Status em 2026-10-16:** serviço `migrate` aplica Alembic antes da API;
+frontend com health check e portas locais configuráveis. Smoke read-only em
+`web/tests/smoke_compose.sh` verifica serviços saudáveis, revisão Alembic, API e
+HTML publicado. RED observado na stack anterior: frontend `running` sem health
+check. Stack separada `versal-task9` passou na criação e na reinicialização com
+volume existente; teardown removeu apenas seus recursos descartáveis.
+README atualizado para sessão/CRUD existentes, bootstrap, testes e limitações.
+Contrato de equivalência e anonimização documentados, sem parser/exportador ou
+carga operacional. A stack existente foi preservada. Backend PostgreSQL: 156 testes passaram antes
+e depois da reversão/reaplicação; sem drift. Frontend: 26 testes passaram e build
+TypeScript/Vite concluído. Revisão independente sem pendências após corrigir o
+comando de build explícito para o serviço `migrate`.
 
 ## Plan self-review
 
