@@ -189,3 +189,10 @@ fora desta ferramenta.
 
 Os testes usam somente SQLite sintético e PostgreSQL descartável. Nunca adicione
 banco real, WAL/SHM, cópias ou relatórios reais ao repositório.
+
+## Cadastros contábeis
+
+Plano de contas e rubricas possuem consulta paginada e criação/edição por empresa.
+Administrador e Contador vinculados podem escrever; os demais perfis consultam.
+As regras de salvamento CC/COR seguem o desktop. Rotas, exemplos e compatibilidade
+estão no [guia de cadastros contábeis](../docs/accounting-catalogs.md).
