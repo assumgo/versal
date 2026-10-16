@@ -190,11 +190,59 @@ cobertura de concorrência citada na revisão anterior foi atendida.
 **Interfaces:**
 - Produces: `require_roles(*names: str)`, `require_company_access(company_id: int, user: User)`, and admin user/company membership endpoints.
 
-- [ ] **Step 1: Write failing tests** that an Administrator can create a user and grant company access, while Consulta cannot write and a linked user cannot see a second company.
-- [ ] **Step 2: Run** `pytest tests/test_authorization.py -v`; expect failure before dependencies/routes.
-- [ ] **Step 3: Implement authorization dependencies and administrator endpoints.** Every denial returns `403`; every mutation calls `write_audit`.
-- [ ] **Step 4: Run** `pytest tests/test_authorization.py -v`; expect PASS.
-- [ ] **Step 5: Commit** `feat: enforce roles and company access`.
+- [x] **Step 1: Write failing tests** that an Administrator can create a user and grant company access, while Consulta cannot write and a linked user cannot see a second company.
+- [x] **Step 2: Run** `pytest tests/test_authorization.py -v`; expect failure before dependencies/routes.
+- [x] **Step 3: Implement authorization dependencies and administrator endpoints.** Every denial returns `403`; every mutation calls `write_audit`.
+- [x] **Step 4: Run** `pytest tests/test_authorization.py -v`; expect PASS.
+- [x] **Step 5: Commit** `feat: enforce roles and company access`.
+
+**Status em 2026-10-16:** Task 4 implementada na branch
+`feat/authorization-administration`, baseada no merge do PR #3 (`708d709`).
+Dependências compartilhadas de autenticação, RBAC e vínculo por empresa;
+administração de usuários (criar/listar/consultar/alterar/inativar) e vínculos
+(listar/conceder/revogar); leitura de empresas limitada ao usuário autenticado.
+Administrador também precisa de vínculo explícito para ler dados da empresa,
+mas pode administrar os vínculos de qualquer usuário. DELETE de usuário inativa
+para preservar histórico. Concessão e revogação são idempotentes e auditam apenas
+mudanças efetivas. Toda mutação é confirmada com sua auditoria na mesma transação,
+sem senhas/hashes nos metadados. Papéis e vínculos são consultados em cada requisição.
+Rotas registradas nesta task para testar os contratos HTTP; escrita de empresas,
+CPF/CNPJ e colaboradores seguem na Task 5; bootstrap de papéis/admin na Task 6.
+Schema de resposta de empresas antecipado da Task 5, sem alterar modelos/migrações.
+
+RED observado: **21 falhas por HTTP 404 e 60 testes passando** (59 anteriores e
+um caso de alvo ausente). Primeiro GREEN: 80 passando e uma falha na preparação
+do teste de duplicidade: rollback removia as contas ainda não confirmadas no
+savepoint de preparação. Fixture corrigida para confirmar sua preparação dentro
+da transação externa descartável. Depois, **81 passando** em ambos os ciclos.
+Cobertura ampliada para atualização inválida, permissões alteradas com JWT já
+emitido e rollback de cinco operações quando a auditoria falha. Verificação:
+`sg docker -c 'bash web/backend/tests/run_postgres.sh'` com **96 testes passando**
+antes e depois de reversão/reaplicação, sem skips e com `alembic check` limpo nos
+dois ciclos. Steps 2 e 4 executados pela suíte completa com `-q`, em vez do
+comando isolado com `-v`. Banco operacional não alterado.
+
+**Revisão independente e correção final:** revisão somente leitura do intervalo
+`708d709..f7c615d` confirmou isolamento por empresa, compatibilidade da autenticação
+e atomicidade da auditoria. Encontrou um ponto relevante: remoção do acesso do
+último administrador ativo. Quatro casos observados em RED (exclusão, inativação,
+rebaixamento de papel e concorrência) resultaram em **4 falhas e 99 passando**.
+Correção usa bloqueio da linha do papel Administrador antes do bloqueio do usuário
+e exige outro administrador ativo antes de remover acesso administrativo. Retorna
+`409` sem alteração/auditoria quando não há substituto; administradores inativos
+não contam. Três testes positivos preservam alterações quando há substituto.
+Teste concorrente usa sessões/conexões independentes e confirma bloqueio real
+via `pg_blocking_pids`, resultado `204`/`409` e um único evento de auditoria.
+Validação final: **103 testes passando** em ambos os ciclos completos do script
+PostgreSQL, sem skips, Alembic sem diferenças. `git diff --check` limpo.
+Sem outros apontamentos acionáveis; a correção foi verificada por RED→GREEN,
+sem segunda rodada de revisão. Decisões: usuários são inativados e vínculos
+idempotentes; o Administrador gere vínculos globalmente mas precisa de vínculo
+para dados; rotas e schema de resposta de empresas antecipados para testes HTTP;
+alterar senha preserva sessões. Paginação, normalização de e-mail e recuperação
+de conta ficam para definição posterior; bootstrap na Task 6 e CRUD operacional
+na Task 5. Essas decisões mantêm comparação exata de e-mail, listas sem paginação
+e ausência de recuperação autônoma de conta nesta entrega.
 
 ### Task 5: Companies and employees CRUD
 

@@ -1,45 +1,18 @@
 from typing import Annotated
 
-import jwt
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.database import get_db
-from app.core.security import decode_access_token
+from app.core.dependencies import current_user, unauthorized
 from app.models.user import User
 from app.schemas.auth import AccessTokenResponse, LoginRequest, UserResponse
 from app.services.auth import AuthenticationError, TokenPair, authenticate, revoke_refresh, rotate_refresh
 
 router = APIRouter(prefix='/api/v1/auth', tags=['auth'])
-_bearer = HTTPBearer(auto_error=False)
 COOKIE_NAME = 'refresh_token'
 COOKIE_PATH = '/api/v1/auth'
-
-
-def unauthorized() -> HTTPException:
-    return HTTPException(status_code=401, detail='Credenciais inválidas',
-                         headers={'WWW-Authenticate': 'Bearer'})
-
-
-def access_subject(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
-) -> int:
-    if credentials is None:
-        raise unauthorized()
-    try:
-        return decode_access_token(credentials.credentials)
-    except jwt.InvalidTokenError:
-        raise unauthorized() from None
-
-
-def current_user(subject: Annotated[int, Depends(access_subject)],
-                 db: Annotated[Session, Depends(get_db)]) -> User:
-    user = db.get(User, subject)
-    if user is None or not user.is_active:
-        raise unauthorized()
-    return user
 
 
 def require_refresh(request: Request) -> str:
