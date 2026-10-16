@@ -1,11 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import App from './App';
+import './styles/tokens.css';
+import './styles/global.css';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <main>
-      <h1>Versal Folha TXT</h1>
-      <p>Ambiente web em preparação.</p>
-    </main>
-  </StrictMode>,
-);
+createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);

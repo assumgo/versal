@@ -1,0 +1,21 @@
+:root {
+  --color-primary: #315f2f;
+  --color-primary-hover: #244d22;
+  --color-accent: #89bf21;
+  --color-background: #f7faf5;
+  --color-border: #cfdccc;
+  --color-surface: #fff;
+  --color-soft: #eef5ea;
+  --color-text: #233622;
+  --color-muted: #536653;
+  --color-error: #a12828;
+  --radius: 8px;
+  --sidebar-width: 295px;
+  --font-body: Arial, Helvetica, sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+}

@@ -359,12 +359,27 @@ Banco operacional não alterado ou populado. Somente Task 6 neste escopo.
 **Interfaces:**
 - Produces: responsive `AppShell` accepting active company, competence and page content; desktop visual tokens and mobile drawer behavior.
 
-- [ ] **Step 1: Write failing component tests** for navigation hierarchy, active item, dashboard cards, responsive drawer trigger and horizontally scrollable table wrapper.
-- [ ] **Step 2: Run** `npm test -- --run`; expect test/setup failure before components.
-- [ ] **Step 3: Implement design tokens and reusable components.** Use original logo/icon assets and preserve every sidebar item/order from the desktop.
-- [ ] **Step 4: Build the visual demo with simulated company, competence, dashboard and table data.** Capture desktop/mobile screenshots and write `web/docs/visual-parity.md` mapping each preserved desktop element.
-- [ ] **Step 5: Run** `npm test -- --run` and `npm run build`; expect PASS.
-- [ ] **Step 6: Commit** `feat: add responsive Versal design system and shell`.
+- [x] **Step 1: Write failing component tests** for navigation hierarchy, active item, dashboard cards, responsive drawer trigger and horizontally scrollable table wrapper.
+- [x] **Step 2: Run** `npm test -- --run`; expect test/setup failure before components.
+- [x] **Step 3: Implement design tokens and reusable components.** Use original logo/icon assets and preserve every sidebar item/order from the desktop.
+- [x] **Step 4: Build the visual demo with simulated company, competence, dashboard and table data.** Capture desktop/mobile screenshots and write `web/docs/visual-parity.md` mapping each preserved desktop element.
+- [x] **Step 5: Run** `npm test -- --run` and `npm run build`; expect PASS.
+- [x] **Step 6: Commit** `feat: add responsive Versal design system and shell`.
+
+Execução Task 7 (2026-10-16): shell e oito componentes reutilizáveis,
+Dashboard/Empresas/Colaboradores demonstrativos e componente de prévia de Login.
+Logo e ícone originais copiados da distribuição desktop, sem alterações.
+Mapa de paridade e quatro capturas em `web/docs/visual-parity.md`.
+RED inicial: `npm test -- --run` falhou por ausência de Vitest, antes dos
+componentes, conforme previsto no Step 2. Testes de navegador revelaram falhas
+reais de retorno de foco e de resize com drawer aberto; corrigidas e verificadas.
+Verificação final: 8 testes de componentes, 3 testes Playwright/Chrome, build
+TypeScript/Vite e `git diff --check` passando. Auditoria após atualização do
+Vitest: zero vulnerabilidades. Revisão independente: resize corrigido; mapa de
+paridade criado. API, autenticação e CRUD persistente continuam na Task 8.
+Ruling: usar branch própria no checkout atual, sem criar worktree adicional;
+o escopo pedido é somente Task 7. Os seletores de contexto ficam somente leitura
+nesta demonstração; a seleção integrada pertence à Task 8.
 
 ### Task 8: Frontend session, protected routes and CRUD screens
 
