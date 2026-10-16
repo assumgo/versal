@@ -53,10 +53,28 @@
 
 - [ ] **Step 1: Write the failing health test** asserting `GET /health` returns `200` and `{"status":"ok"}`.
 - [ ] **Step 2: Run it** with `pytest tests/test_health.py -v`; expect collection failure before scaffold.
-- [ ] **Step 3: Create FastAPI app, typed environment settings, dependency manifests, Compose services and `.env.example` files.** Include health route and no secret defaults.
-- [ ] **Step 4: Run** `pytest tests/test_health.py -v`; expect PASS.
-- [ ] **Step 5: Verify** `docker compose -f docker-compose.yml config` succeeds.
-- [ ] **Step 6: Commit** `chore: scaffold Versal Folha web application`.
+- [x] **Step 3: Create FastAPI app, typed environment settings, dependency manifests, Compose services and `.env.example` files.** Include health route and no secret defaults.
+- [x] **Step 4: Run** `pytest tests/test_health.py -v`; expect PASS.
+- [x] **Step 5: Verify** `docker compose -f docker-compose.yml config` succeeds.
+- [x] **Step 6: Commit** `chore: scaffold Versal Folha web application`.
+
+**Status em 2026-10-16:** scaffold React/TypeScript/Vite, lockfile, Dockerfiles,
+Compose com PostgreSQL e health checks, exemplos de ambiente e `web/README.md`
+implementados. Segredo JWT obrigatório (mínimo de 32 caracteres); credenciais de
+banco sem padrão na configuração Python. Teste de saúde preexistente ajustado
+para `pytest-asyncio`, já listado nas dependências. Novos testes de configuração
+observados falhando antes da correção (4 falhas), depois suíte completa com
+**6 testes passando**. Build do frontend concluído. Validação sintática YAML
+passou. Após instalar Docker, **Step 5 validado** com `docker compose -f
+web/docker-compose.yml config --quiet`. Stack construída e iniciada: PostgreSQL
+e backend saudáveis, frontend ativo. HTTP do host confirmou `/health` e a página
+inicial; `SELECT 1` no PostgreSQL passou. Dentro dos containers: `pytest -q` com
+**6 testes passando** e `npm run build` concluído. Stack mantida em execução local.
+Credenciais aleatórias em `web/.env` com modo 0600, ignorado pelo Git.
+Os passos iniciais de RED do health são históricos e não foram refeitos.
+Entrega registrada na branch `chore/estrutura-inicial-web` com o commit
+`chore: scaffold Versal Folha web application`. Apenas a tarefa 1 está no escopo
+desta entrega.
 
 ### Task 2: Database foundation and migration
 
