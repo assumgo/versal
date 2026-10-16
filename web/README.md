@@ -153,7 +153,8 @@ O refresh token é opaco e somente seu hash SHA-256 é armazenado no banco.
 Ele nunca aparece no JSON: fica no cookie `refresh_token`, com `HttpOnly`,
 `SameSite=Lax` e caminho `/api/v1/auth`. Com `ENVIRONMENT=production`, o cookie
 exige HTTPS (`Secure`). No frontend, usar `credentials: 'include'` e guardar
-apenas o access token em memória; a integração do frontend/CORS é etapa futura.
+apenas o access token em memória. CORS usa as origens explícitas de
+`FRONTEND_ORIGINS`, separadas por vírgula; a integração do frontend é etapa futura.
 
 Reutilizar um refresh revogado invalida toda sua família. Usuários inativos
 não podem entrar, renovar sessão ou acessar `/me`. Logout não revoga JWTs já
@@ -165,9 +166,11 @@ refresh/logout com requisições e conexões independentes, observando o bloquei
 real no PostgreSQL. O script `tests/run_postgres.sh` inclui esses testes. Eles
 confirmam respostas, auditoria, revogação persistida e rejeição dos sucessores.
 
-Ainda não há cadastro público nem comando de criação do primeiro administrador;
-o bootstrap está previsto na Task 6. Os testes usam contas sintéticas e banco
-descartável. A stack operacional não foi migrada ou populada nesta etapa.
+Não há cadastro público. O comando explícito de criação do primeiro administrador
+é restrito ao desenvolvimento, exige credenciais no ambiente e está documentado
+no [guia do backend](backend/README.md#primeiro-administrador-de-desenvolvimento).
+Os testes usam contas sintéticas e banco descartável; a stack operacional não
+é populada automaticamente.
 
 ## Autorização e administração
 
@@ -186,8 +189,7 @@ Todas estas rotas exigem `Authorization: Bearer <access_token>`:
 | `GET /api/v1/companies/{company_id}` | Exige vínculo explícito, inclusive para Administrador. |
 
 Papéis aceitos: `Administrador`, `Contador`, `Operador` e `Consulta`. O papel
-precisa existir no banco; a criação inicial desses registros ficará no bootstrap
-da Task 6. E-mails são validados e preservados exatamente como informados,
+precisa existir no banco; o bootstrap de desenvolvimento cria os quatro papéis. E-mails são validados e preservados exatamente como informados,
 seguindo a comparação exata usada no login. Usuários novos começam sem vínculos.
 Campos extras são rejeitados; email duplicado retorna `409`.
 
