@@ -11,7 +11,7 @@ async def test_company_create_update_inactivate_preserves_history(client, accoun
     auth = headers(accounts)
     async with client:
         response = await client.post(COMPANIES, headers=auth, json={
-            'razao': 'Nova empresa', 'cnpj': '11.222.333/0001-81'})
+            'codigo_siagri': '8', 'razao': 'Nova empresa', 'cnpj': '11.222.333/0001-81'})
         assert response.status_code == 201, response.text
         company_id = response.json()['id']
         assert response.json()['cnpj'] == '11222333000181'
@@ -33,11 +33,11 @@ async def test_company_create_update_inactivate_preserves_history(client, accoun
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('cnpj', ['11111111111111', '11222333000180', 'abc11222333000181', '', None])
+@pytest.mark.parametrize('cnpj', ['11111111111111', '11222333000180', 'abc11222333000181'])
 async def test_invalid_cnpj_does_not_persist(client, accounts, admin_db, cnpj):
     async with client:
         result = await client.post(COMPANIES, headers=headers(accounts),
-                                   json={'razao': 'Invalid', 'cnpj': cnpj})
+                                   json={'codigo_siagri': '8', 'razao': 'Invalid', 'cnpj': cnpj})
         assert result.status_code == 422
     assert admin_db.scalar(select(Company).where(Company.razao == 'Invalid')) is None
     assert admin_db.scalars(select(AuditLog)).all() == []
@@ -79,7 +79,7 @@ async def test_company_mutation_rolls_back_when_audit_fails(client, accounts, ad
     async with client:
         with pytest.raises(RuntimeError, match='audit unavailable'):
             if operation == 'create':
-                await client.post(COMPANIES, headers=headers(accounts), json={'razao': 'Rolled back', 'cnpj': '11222333000181'})
+                await client.post(COMPANIES, headers=headers(accounts), json={'codigo_siagri': '8', 'razao': 'Rolled back', 'cnpj': '11222333000181'})
             elif operation == 'update':
                 await client.patch(f'{COMPANIES}/{target}', headers=headers(accounts), json={'razao': 'Rolled back'})
             else:
@@ -100,3 +100,30 @@ async def test_admin_can_reactivate_company(client, accounts, admin_db):
         result = await client.patch(f'{COMPANIES}/{company.id}', headers=headers(accounts), json={'status': 'Ativa'})
         assert result.status_code == 200
         assert result.json()['status'] == 'Ativa'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('document', [{}, {'cnpj': ''}, {'cnpj': None}])
+async def test_company_document_optional_as_in_desktop(client, accounts, document):
+    async with client:
+        result = await client.post(COMPANIES, headers=headers(accounts),
+                                   json={'codigo_siagri': '8', 'razao': 'Sem documento', **document})
+        assert result.status_code == 201, result.text
+        target = f"{COMPANIES}/{result.json()['id']}"
+        result = await client.patch(target, headers=headers(accounts), json={'cnpj': '11222333000181'})
+        assert result.status_code == 200
+        result = await client.patch(target, headers=headers(accounts), json={'cnpj': document.get('cnpj', '')})
+        assert result.status_code == 200
+        assert result.json()['cnpj'] in ('', None)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('code', [{}, {'codigo_siagri': ''}, {'codigo_siagri': '  '}, {'codigo_siagri': None}])
+async def test_company_requires_siagri_code_as_in_desktop(client, accounts, code):
+    async with client:
+        result = await client.post(COMPANIES, headers=headers(accounts),
+                                   json={'razao': 'Missing code', 'cnpj': '11222333000181', **code})
+        assert result.status_code == 422
+        if code:
+            result = await client.patch(f'{COMPANIES}/{accounts[1][0].id}', headers=headers(accounts), json=code)
+            assert result.status_code == 422

@@ -41,7 +41,7 @@ async def test_employee_crud_is_scoped_and_audited(client, accounts, admin_db):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('cpf', ['11111111111', '52998224724', 'abc52998224725', '', None])
+@pytest.mark.parametrize('cpf', ['11111111111', '52998224724', 'abc52998224725'])
 async def test_invalid_cpf_rejected(client, accounts, admin_db, cpf):
     async with client:
         result = await client.post(endpoint(accounts), headers=headers(accounts, 'Operador'), json={'nome': 'Invalid', 'cpf': cpf})
@@ -67,7 +67,7 @@ async def test_employee_permissions_and_cross_company_targets(client, accounts, 
             result = await client.request(method, path + suffix, headers=auth, json=body)
             assert result.status_code == ((201 if method == 'POST' else 404) if can_write else 403)
         if can_write:
-            for body in ({'nome': 'Changed', 'cpf': 'bad'}, {'company_id': other.company_id}, {'nome': None}, {'status': 'unknown'}):
+            for body in ({'nome': 'Changed', 'cpf': 'bad'}, {'company_id': other.company_id}, {'status': 'unknown'}):
                 assert (await client.patch(f'{path}/{own.id}', headers=auth, json=body)).status_code == 422
     admin_db.refresh(own)
     admin_db.refresh(other)
@@ -120,3 +120,17 @@ async def test_employee_mutation_rolls_back_when_audit_fails(client, accounts, a
     assert admin_db.get(Employee, employee_id).nome == 'Original'
     assert admin_db.scalar(select(Employee).where(Employee.nome == 'Rolled back')) is None
     assert admin_db.scalars(select(AuditLog)).all() == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('body', [{}, {'nome': '', 'cpf': ''}, {'nome': None, 'cpf': None}])
+async def test_employee_fields_optional_as_in_desktop(client, accounts, body):
+    async with client:
+        result = await client.post(endpoint(accounts), headers=headers(accounts, 'Operador'), json=body)
+        assert result.status_code == 201, result.text
+        target = f"{endpoint(accounts)}/{result.json()['id']}"
+        assert (await client.patch(target, headers=headers(accounts, 'Operador'),
+                                   json={'nome': 'Ana', 'cpf': '52998224725'})).status_code == 200
+        result = await client.patch(target, headers=headers(accounts, 'Operador'), json={'nome': None, 'cpf': None})
+        assert result.status_code == 200
+        assert result.json()['nome'] is None and result.json()['cpf'] is None

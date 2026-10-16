@@ -271,10 +271,16 @@ independente, sem FK para colaboradores. Empresa inativa permite consulta, mas
 bloqueia escrita de colaboradores com `409`. Bloqueio da linha da empresa
 serializa essas escritas com inativação/reativação.
 
-CPF/CNPJ numéricos exigidos na criação, aceitando máscara convencional e salvando
-somente dígitos, com verificação dos dígitos e rejeição de sequências repetidas.
-PATCH distingue ausência e nulo, rejeita nulo para nome/documento/status e campos
-extras; nomes/status de modelos e migrações legadas permanecem intactos.
+Obrigatoriedade conferida no desktop (`app.py:1440–1444`, `1479–1482`):
+empresa exige código Siagri e razão social, ambos não vazios; CNPJ é opcional.
+Cadastro de colaboradores não exige nome, CPF ou outros campos de texto.
+CPF/CNPJ aceitam ausência, nulo ou vazio; quando preenchidos, aceitam máscara
+convencional e são salvos somente com dígitos, validando dígitos verificadores e
+rejeitando sequências repetidas. PATCH distingue ausência (preserva) de
+nulo/vazio (limpa campos opcionais); bloqueia nulo/vazio para código Siagri e razão
+social, nulo para status e campos extras. Modelos e migrações permanecem intactos.
+No desktop, centro de custo e correntista/CPF são exigidos condicionalmente na
+exportação (`app.py:2164–2179`), fora do escopo do CRUD da Task 5.
 Toda escrita confirma auditoria na mesma transação, com metadados limitados aos
 nomes dos campos alterados; falha de auditoria reverte todas as seis operações.
 Registro do router de colaboradores antecipado da Task 6 para validar HTTP.
@@ -290,6 +296,13 @@ Validação final: `sg docker -c 'bash web/backend/tests/run_postgres.sh'`
 com **131 testes passando nos dois ciclos**, sem skips, Alembic sem diferenças
 antes/depois de downgrade e reupgrade e verificação de schema vazio após downgrade.
 `git diff --check` limpo. Banco operacional não alterado.
+
+**Correção de obrigatoriedade após consulta ao desktop:** testes de regressão
+observaram **10 falhas e 127 passando** antes do ajuste. Depois da correção,
+`sg docker -c 'bash web/backend/tests/run_postgres.sh'` passou **137 testes nos
+dois ciclos**, sem skips; upgrade/check/downgrade/schema vazio/reupgrade/check
+concluídos sem diferenças. Revisão independente da correção sem apontamentos.
+Código original e banco operacional não alterados.
 
 ### Task 6: Seed data, OpenAPI and backend verification
 

@@ -23,8 +23,8 @@ CNPJ = Annotated[str, AfterValidator(lambda value: validate_document(value, cnpj
 class CompanyCreate(BaseModel):
     model_config = ConfigDict(extra='forbid')
     razao: Name
-    cnpj: CNPJ
-    codigo_siagri: str | None = None
+    cnpj: CNPJ | None = None
+    codigo_siagri: Name
     fantasia: str | None = None
     status: Literal['Ativa', 'Inativa'] = 'Ativa'
 
@@ -33,13 +33,13 @@ class CompanyUpdate(BaseModel):
     model_config = ConfigDict(extra='forbid')
     razao: Name | None = None
     cnpj: CNPJ | None = None
-    codigo_siagri: str | None = None
+    codigo_siagri: Name | None = None
     fantasia: str | None = None
     status: Literal['Ativa', 'Inativa'] | None = None
 
     @model_validator(mode='after')
     def reject_null_required(self) -> 'CompanyUpdate':
-        for field in ('razao', 'cnpj', 'status'):
+        for field in ('razao', 'codigo_siagri', 'status'):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f'{field} não pode ser nulo')
         return self

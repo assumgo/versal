@@ -2,6 +2,8 @@ import re
 
 
 def validate_document(value: str, *, cnpj: bool = False) -> str:
+    if not value.strip():
+        return ''
     size = 14 if cnpj else 11
     mask = r'[0-9]{2}\.[0-9]{3}\.[0-9]{3}/[0-9]{4}-[0-9]{2}' if cnpj else r'[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}'
     if not (re.fullmatch(rf'[0-9]{{{size}}}', value) or re.fullmatch(mask, value)):
