@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.main import app
-from app.models import AuditLog, ChartAccount, Company, Role, Rubric, User, UserCompany
+from app.models import AuditLog, ChartAccount, Company, FinanceParam, Role, Rubric, User, UserCompany
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ def catalog_database():
         app.dependency_overrides.clear()
         app.dependency_overrides.update(previous)
         with engine.begin() as db:
-            for model in (AuditLog, Rubric, ChartAccount, UserCompany):
+            for model in (AuditLog, FinanceParam, Rubric, ChartAccount, UserCompany):
                 db.execute(delete(model).where(model.company_id == company_id))
             db.execute(delete(User).where(User.id == user_id))
             db.execute(delete(Company).where(Company.id == company_id))
@@ -125,6 +125,31 @@ def test_catalog_writes_serialize_with_duplicates_and_company_inactivation(catal
             model = ChartAccount if resource == 'chart-accounts' else Rubric
             rows = db.scalars(select(model).where(model.company_id == company)).all()
             assert len(rows) == (1 if leader_action == 'create' else 0)
+    finally:
+        overlap.release.set()
+        event.remove(engine, 'before_cursor_execute', overlap.before)
+        event.remove(engine, 'after_cursor_execute', overlap.after)
+
+
+def test_finance_write_waits_for_company_inactivation(catalog_database):
+    engine, company, auth = catalog_database
+    overlap = CompanyOverlap(engine)
+    event.listen(engine, 'before_cursor_execute', overlap.before)
+    event.listen(engine, 'after_cursor_execute', overlap.after)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            leader = pool.submit(send, 'PATCH', f'/api/v1/companies/{company}', auth, {'status': 'Inativa'})
+            assert overlap.locked.wait(15)
+            waiter = pool.submit(send, 'POST', f'/api/v1/companies/{company}/finance-params', auth, {'tipo': 'INSS'})
+            try:
+                assert overlap.waiting.wait(15)
+                assert overlap.blocked()
+            finally:
+                overlap.release.set()
+            assert leader.result(timeout=20).status_code == 200
+            assert waiter.result(timeout=20).status_code == 409
+        with Session(engine) as db:
+            assert db.scalar(select(FinanceParam.id).where(FinanceParam.company_id == company)) is None
     finally:
         overlap.release.set()
         event.remove(engine, 'before_cursor_execute', overlap.before)
