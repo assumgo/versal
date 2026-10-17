@@ -56,3 +56,12 @@ async def test_cors_does_not_authorize_unknown_origin():
             'Origin': 'https://untrusted.test', 'Access-Control-Request-Method': 'POST'})
         assert response.status_code == 400
         assert 'access-control-allow-origin' not in response.headers
+
+
+def test_openapi_documents_multipart_preview():
+    from app.main import app
+    operation = app.openapi()['paths']['/api/v1/companies/{company_id}/payroll-import-preview']['post']
+    schema = operation['requestBody']['content']['multipart/form-data']['schema']
+    assert schema['properties']['file']['format'] == 'binary'
+    assert set(schema['required']) == {'file', 'competence'}
+    assert {'413', '415', '503', '504'} <= set(operation['responses'])
