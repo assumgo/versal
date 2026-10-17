@@ -114,10 +114,83 @@ cd web/backend
 python -m pytest tests/test_parser_corpus.py -q
 ```
 
+## API Python dos parsers web
+
+O backend possui leitores de **Extrato Mensal**, extraídos da referência 2.18
+identificada acima, em `app/parsers/`. Não importam Qt, configuração da API,
+SQLAlchemy ou o arquivo desktop; não acessam banco nem alteram a entrada.
+
+Na pasta `web/backend/`, com as dependências de `requirements.txt` instaladas:
+
+```python
+from pathlib import Path
+from app.parsers import parse_excel, parse_pdf, UnsupportedLayoutError
+
+resultado_pdf = parse_pdf(Path('extrato.pdf'))
+resultado_excel = parse_excel(Path('extrato.xlsx'))  # também aceita XLS
+```
+
+Ambas as funções aceitam `str` ou `Path` de arquivo local existente. URLs não são
+buscadas; caminho ausente recebe `FileNotFoundError` antes de acionar os leitores.
+Devolvem `ParsedStatement`, um dicionário tipado declarado em
+`app/parsers/types.py`. Campos: `competencia`,
+`empresa` (`codigo_siagri`, `razao`, `cnpj`), `tipo_importacao` (`Extrato`) e
+`colaboradores`. Cada colaborador contém matrícula, nome, CPF, situação, cargo,
+centro de custo, líquido e rubricas. Cada rubrica contém código, descrição,
+referência, valor e tipo, com as mesmas chaves do JSON congelado. Valores e
+líquidos são `Decimal` em memória; serializar como texto ao produzir JSON,
+sem convertê-los para float. As conversões e o arredondamento monetário do
+desktop permanecem; isso não garante precisão que o parser original não oferecia.
+
+O PDF usa pdfplumber e, somente em exceção, PyMuPDF. Um documento sem texto não
+aciona fallback e não tem OCR. Excel usa calamine e, em exceção, pandas com
+openpyxl/XLSX ou xlrd/XLS. Ambos leem somente a primeira aba. Erros do segundo
+leitor propagam sem resultado parcial. Arquivo legível sem cabeçalho mantém o
+resultado vazio caracterizado; lista vazia não prova validade de um layout.
+
+EXTRATO MENSAL tem prioridade sobre menções a 13º. Um título reconhecido de
+provisão sem título de Extrato lança `UnsupportedLayoutError`; provisões e
+encargos não fazem parte desta API. As divergências de acentos, CC e deduplicação
+documentadas acima continuam presentes. Dados de empresa são apenas detectados:
+não selecionam empresa no banco e não substituem a autorização de futura importação.
+
+Versões usadas na validação Linux/Python 3.12.3:
+
+| Biblioteca | Versão |
+| --- | --- |
+| pdfplumber | 0.11.10 (fixada em requirements) |
+| python-calamine | 0.9.0 (fixada em requirements) |
+| PyMuPDF | 1.28.2 |
+| pandas | 2.3.3 |
+| openpyxl | 3.1.5 |
+| xlrd | 2.0.2 |
+
+Os fallbacks possuem limites de versão em `requirements.txt`; a tabela registra
+o ambiente efetivamente testado, sem representar homologação de todas as versões.
+
+```bash
+cd web/backend
+.venv/bin/python -m pytest tests/test_extrato_parsing.py tests/test_extrato_pdf.py tests/test_extrato_excel.py tests/test_parser_corpus.py tests/test_parser_isolation.py -q
+```
+
+Os sete resultados congelados são comparados integralmente, em ordem, com
+decimais em texto e tolerância zero. Há testes de fallback real para XLS/XLSX
+e PDF, prioridade de títulos, rejeição de provisões, primeira aba, isolamento
+de Qt/banco e preservação dos arquivos. Nenhum esperado é regenerado por eles.
+Não há upload HTTP, prévia de importação, persistência ou exportação nesta entrega.
+A aprovação funcional e a conferência Windows dos manifestos continuam pendentes.
+
+Verificação da extração em 2026-10-17: 51 testes focados passaram. O script
+`bash web/backend/tests/run_postgres.sh`, executado com PostgreSQL 16 descartável,
+passou os 296 testes nas duas execuções, antes e depois de reverter/reaplicar
+as migrações; Alembic não detectou divergência de esquema. Os nove corpos de
+funções puras foram também comparados por AST com a fonte desktop e são iguais.
+
 ## Lacunas
 
 Faltam modelos e corpus de provisões, encargos, plano e rubricas; variantes de
 layout reais, XLS não padrão e seus fallbacks; documentos truncados/corrompidos;
 valores grandes, múltiplas abas e divergência de empresa/competência. Ausência de
-movimentos não equivale a erro de arquivo corrompido. Ainda não há parser web,
-validação de upload, persistência, exportação ou homologação funcional nesta entrega.
+movimentos não equivale a erro de arquivo corrompido. A extração web cobre somente
+o Extrato Mensal; ainda não há validação de upload, persistência, exportação ou
+homologação funcional nesta entrega.

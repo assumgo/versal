@@ -242,11 +242,16 @@ listagem de competências ainda aguardam endpoints. Os demais módulos do menu
 apresentam sua indisponibilidade nesta fase.
 
 Este ambiente é local, sem TLS, servidor de produção ou backup operacional.
-Parser PDF/XLS/XLSX, importação completa, validação contábil completa, exportação
+Os parsers Python de Extrato Mensal PDF/XLS/XLSX estão disponíveis no backend,
+com equivalência técnica aos sete casos sintéticos congelados. Contrato, exemplos,
+dependências e limites estão no [guia de formatos](docs/desktop-input-formats.md#api-python-dos-parsers-web).
+A homologação funcional e Windows segue pendente.
+
+Upload e importação completa, validação contábil completa, exportação
 TXT Siagri/Aliare, restauração e migração automática do SQLite não estão implementados.
 O desktop continua sendo o sistema operacional durante a conferência.
 
-Antes de extrair parsers ou exportadores, siga o
+Para ampliar os parsers ou extrair exportadores, siga o
 [protocolo de equivalência](docs/parser-equivalence-strategy.md) e as
 [regras das fixtures](backend/tests/fixtures/README.md).
 A preservação de IDs, vínculos e sequências está detalhada no
