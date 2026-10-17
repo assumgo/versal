@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "case_id": "extrato_pdf_empty",
+  "provenance": "entirely_synthetic",
+  "approval": "pending_functional_and_windows_review",
+  "reference": {
+    "desktop_version": "2.18",
+    "source_sha256": "ab2203e8b0e56550dfcd1baa84e4c6a89618809b06fa9b420d722ea8fc6905c2",
+    "function": "parse_pdf",
+    "os": "Linux",
+    "python": "3.12.3",
+    "libraries": {
+      "pdfplumber": "0.11.10",
+      "python-calamine": "0.9.0"
+    }
+  },
+  "input": {
+    "file": "input.pdf",
+    "sha256": "906319afb7f04710668786cc33c77aec9b23edfb75e7f248ee2c6f9c58615238"
+  },
+  "expected": {
+    "file": "expected.json",
+    "sha256": "2d06a51f6e70d609aee8d882e25439d5e909dff6cafae212c79a0ee517e8fe71",
+    "totals": {
+      "employees": 0,
+      "payroll_lines": 0,
+      "by_type": {},
+      "net": "0"
+    }
+  },
+  "comparison": "ordered full JSON; Decimal serialized as text; no rounding tolerance",
+  "context": {
+    "company": "synthetic_901",
+    "competence": "09/2026",
+    "database": "none",
+    "clock": "not_used",
+    "configuration": "parser_only"
+  },
+  "txt_reference": null,
+  "notes": [
+    "No operational data or original document content copied.",
+    "PDF/Excel parser stage only; no persistence, export or GUI executed."
+  ]
+}

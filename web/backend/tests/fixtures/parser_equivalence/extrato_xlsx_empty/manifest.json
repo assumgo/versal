@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "case_id": "extrato_xlsx_empty",
+  "provenance": "entirely_synthetic",
+  "approval": "pending_functional_and_windows_review",
+  "reference": {
+    "desktop_version": "2.18",
+    "source_sha256": "ab2203e8b0e56550dfcd1baa84e4c6a89618809b06fa9b420d722ea8fc6905c2",
+    "function": "parse_excel",
+    "os": "Linux",
+    "python": "3.12.3",
+    "libraries": {
+      "pdfplumber": "0.11.10",
+      "python-calamine": "0.9.0"
+    }
+  },
+  "input": {
+    "file": "input.xlsx",
+    "sha256": "90dcd5333e6cc2e7c12b893e277dbcc4eabf605cfa2ceef979dc022aa11d7296"
+  },
+  "expected": {
+    "file": "expected.json",
+    "sha256": "89a1e31f46fb3805d26d85db762e81f5403ec66525b50e885c78d6ef1a081b9f",
+    "totals": {
+      "employees": 0,
+      "payroll_lines": 0,
+      "by_type": {},
+      "net": "0"
+    }
+  },
+  "comparison": "ordered full JSON; Decimal serialized as text; no rounding tolerance",
+  "context": {
+    "company": "synthetic_901",
+    "competence": "",
+    "database": "none",
+    "clock": "not_used",
+    "configuration": "parser_only"
+  },
+  "txt_reference": null,
+  "notes": [
+    "No operational data or original document content copied.",
+    "PDF/Excel parser stage only; no persistence, export or GUI executed."
+  ]
+}
