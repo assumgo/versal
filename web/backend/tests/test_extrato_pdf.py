@@ -38,6 +38,9 @@ def fail_primary(*args, **kwargs):
 def test_pdf_fallback_reads_when_primary_fails(monkeypatch):
     monkeypatch.setattr(pdfplumber, 'open', fail_primary)
     result = parse_pdf(ROOT / 'extrato_pdf' / 'input.pdf')
+    assert json.loads(json.dumps(result, default=decimal_text)) == json.loads(
+        (ROOT / 'extrato_pdf' / 'expected.json').read_text()
+    )
     assert result['competencia'] == '09/2026'
     assert result['empresa']['codigo_siagri'] == '901'
     assert [p['nome'] for p in result['colaboradores']] == ['ANA SINTÉTICA', 'JOÃO FICTÍCIO']
@@ -54,7 +57,7 @@ def test_empty_pdf_text_does_not_trigger_fallback(monkeypatch):
 
     monkeypatch.setattr(pdfplumber, 'open', empty_document)
     monkeypatch.setattr(pymupdf, 'open', forbidden_fallback)
-    assert parse_pdf('empty.pdf')['colaboradores'] == []
+    assert parse_pdf(ROOT / 'extrato_pdf_empty' / 'input.pdf')['colaboradores'] == []
 
 
 def test_pdf_propagates_failure_when_both_readers_fail(monkeypatch):
@@ -64,4 +67,4 @@ def test_pdf_propagates_failure_when_both_readers_fail(monkeypatch):
     monkeypatch.setattr(pdfplumber, 'open', fail_primary)
     monkeypatch.setattr(pymupdf, 'open', fail_fallback)
     with pytest.raises(ValueError, match='fallback reader failed'):
-        parse_pdf('broken.pdf')
+        parse_pdf(ROOT / 'extrato_pdf' / 'input.pdf')

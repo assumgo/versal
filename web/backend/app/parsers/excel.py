@@ -4,11 +4,13 @@ from pathlib import Path
 from .common import _cell_str
 from .errors import UnsupportedLayoutError
 from .extrato import parse_extrato_rows
+from .files import local_document_path
 from .types import ParsedStatement
 
 
 def parse_excel(path: str | Path) -> ParsedStatement:
     """Read the first worksheet, preserving desktop fallback and title priority."""
+    path = local_document_path(path)
     try:
         from python_calamine import load_workbook
 

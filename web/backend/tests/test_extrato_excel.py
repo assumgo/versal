@@ -54,7 +54,7 @@ def test_excel_propagates_failure_when_both_readers_fail(monkeypatch):
     monkeypatch.setattr(python_calamine, 'load_workbook', fail_primary)
     monkeypatch.setattr(pandas, 'read_excel', fail_fallback)
     with pytest.raises(ValueError, match='fallback reader failed'):
-        parse_excel('broken.xlsx')
+        parse_excel(ROOT / 'extrato_xlsx' / 'input.xlsx')
 
 
 def write_workbook(path, first_rows, second_rows=()):

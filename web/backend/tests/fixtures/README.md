@@ -3,7 +3,8 @@
 `legacy_schema.sql` contém somente o DDL de referência do desktop, sem dados reais.
 O corpus inicial de Extrato Mensal PDF/XLS/XLSX é inteiramente sintético e está
 em `parser_equivalence/`, com esperados congelados das funções originais do desktop.
-Ainda não é homologado no Windows ou funcionalmente; não há parser/exportador web.
+Ainda não é homologado no Windows ou funcionalmente. Os parsers web de Extrato
+Mensal são comparados integralmente com esses esperados; não há exportador web.
 Veja [inventário, divergências e reprodução](../../../docs/desktop-input-formats.md).
 
 Para a próxima etapa, organizar cada caso em `parser_equivalence/<case_id>/`, com

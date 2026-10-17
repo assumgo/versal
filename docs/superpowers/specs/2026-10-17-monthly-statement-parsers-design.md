@@ -1,6 +1,6 @@
 # Extração dos parsers de Extrato Mensal
 
-Status: proposta para revisão; implementação ainda não iniciada.
+Status: desenho aprovado pelo usuário em 2026-10-17.
 
 ## Objetivo
 

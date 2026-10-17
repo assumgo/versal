@@ -2,11 +2,13 @@
 from pathlib import Path
 
 from .extrato import parse_extrato_text
+from .files import local_document_path
 from .types import ParsedStatement
 
 
 def parse_pdf(path: str | Path) -> ParsedStatement:
     """Read text using the desktop reader order; empty text is not an error."""
+    path = local_document_path(path)
     try:
         import pdfplumber
 
