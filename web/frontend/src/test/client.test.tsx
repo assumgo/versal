@@ -6,7 +6,7 @@ it('shares a refresh across concurrent unauthorized requests and retries once wi
   vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
     credentials.push(init.credentials);
     if (url.endsWith('/refresh')) { refreshes++; return Response.json({ access_token: 'new' }); }
-    return (init.headers as Record<string, string>).Authorization === 'Bearer new' ? Response.json({ ok: true }) : new Response(null, { status: 401 });
+    return new Headers(init.headers).get('Authorization') === 'Bearer new' ? Response.json({ ok: true }) : new Response(null, { status: 401 });
   }));
   expect(await Promise.all([request('/companies'), request('/companies')])).toEqual([{ ok: true }, { ok: true }]);
   expect(refreshes).toBe(1);
@@ -27,7 +27,7 @@ it('does not restore a token when an earlier refresh completes after session cle
   vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(resolve => { finish = resolve; })));
   const refresh = refreshSession(); setToken(null); finish(Response.json({ access_token: 'stale' })); await refresh;
   const fetcher = vi.fn().mockResolvedValue(Response.json([])); vi.stubGlobal('fetch', fetcher); await request('/companies');
-  expect(fetcher.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  expect(new Headers(fetcher.mock.calls[0][1].headers).get('Authorization')).toBeNull();
 });
 it('never replays an old mutation under a newly logged-in session', async () => {
   setToken('old-user'); let finish!: (value: Response) => void;
@@ -54,5 +54,5 @@ it('does not clear the new session when an old retry returns unauthorized', asyn
   setToken('new-user'); finish(new Response(null, { status: 401 }));
   await expect(operation).rejects.toMatchObject({ status: 401 });
   const fetcher = vi.fn().mockResolvedValue(Response.json([])); vi.stubGlobal('fetch', fetcher); await request('/companies');
-  expect(fetcher.mock.calls[0][1].headers.Authorization).toBe('Bearer new-user');
+  expect(new Headers(fetcher.mock.calls[0][1].headers).get('Authorization')).toBe('Bearer new-user');
 });
