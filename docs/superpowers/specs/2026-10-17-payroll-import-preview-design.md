@@ -1,6 +1,6 @@
 # Upload e prévia de Extrato Mensal
 
-Status: proposta para revisão. Branch `feat/payroll-import-preview`, baseada
+Status: desenho aprovado pelo usuário em 2026-10-17. Branch `feat/payroll-import-preview`, baseada
 na main `0280615`, após integração do PR #14.
 
 ## Objetivo e escopo

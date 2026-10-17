@@ -220,3 +220,26 @@ async def test_immediate_parser_error_does_not_hang_disconnect_cleanup(monkeypat
     monkeypatch.setattr(route.preview_runner, 'run', fail)
     with pytest.raises(PreviewInputError):
         await asyncio.wait_for(route.run_connected(request, tmp_path / 'file.pdf', '.pdf'), 0.5)
+
+
+@pytest.mark.asyncio
+async def test_cancelled_multipart_parse_closes_partial_spooled_files(monkeypatch):
+    from starlette.datastructures import Headers, UploadFile
+    from app.api.routes import payroll_preview as route
+    files = []
+    async def cancelled_write(self, data):
+        files.append(self.file)
+        raise asyncio.CancelledError()
+    class UploadRequest:
+        headers = Headers({'Content-Type': 'multipart/form-data; boundary=test'})
+        async def stream(self):
+            yield (b'--test\r\nContent-Disposition: form-data; name="file"; filename="input.pdf"\r\n'
+                   b'Content-Type: application/pdf\r\n\r\n%PDF-content\r\n--test--\r\n')
+    monkeypatch.setattr(UploadFile, 'write', cancelled_write)
+    try:
+        with pytest.raises(asyncio.CancelledError):
+            await route.read_form(UploadRequest())
+        assert files and all(file.closed for file in files)
+    finally:
+        for file in files:
+            file.close()

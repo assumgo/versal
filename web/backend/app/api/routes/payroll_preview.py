@@ -39,13 +39,21 @@ async def read_form(request: Request):
     async def stream():
         yield bytes(body)
 
+    parser = None
+    form = None
     try:
         if request.headers.get('content-type', '').split(';')[0].lower() != 'multipart/form-data':
             raise MultiPartException('multipart required')
         parser = MultiPartParser(request.headers, stream(), max_files=1, max_fields=1, max_part_size=64 * 1024)
-        return await parser.parse()
+        form = await parser.parse()
+        return form
     except (MultiPartException, ValueError):
         raise PreviewInputError(422, 'Envie exatamente um arquivo e a competência MM/AAAA.') from None
+    finally:
+        if parser is not None and form is None:
+            # Starlette closes these on MultiPartException, but not on cancellation.
+            for file in parser._files_to_close_on_error:
+                file.close()
 
 
 async def run_connected(request: Request, path: Path, extension: str):
