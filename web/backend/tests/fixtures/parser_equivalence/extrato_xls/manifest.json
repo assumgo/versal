@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "case_id": "extrato_xls",
+  "provenance": "entirely_synthetic",
+  "approval": "pending_functional_and_windows_review",
+  "reference": {
+    "desktop_version": "2.18",
+    "source_sha256": "ab2203e8b0e56550dfcd1baa84e4c6a89618809b06fa9b420d722ea8fc6905c2",
+    "function": "parse_excel",
+    "os": "Linux",
+    "python": "3.12.3",
+    "libraries": {
+      "pdfplumber": "0.11.10",
+      "python-calamine": "0.9.0"
+    }
+  },
+  "input": {
+    "file": "input.xls",
+    "sha256": "d87654e43b68c37f0fde886976355a684ca1d6e46fbf05defc87fe50ff8aa5fc"
+  },
+  "expected": {
+    "file": "expected.json",
+    "sha256": "0da14f3fbb2594aaa31d60c94cdc6749a6053019adcf3833ccd25aaefd6b4c0f",
+    "totals": {
+      "employees": 2,
+      "payroll_lines": 4,
+      "by_type": {
+        "D": "500.00",
+        "P": "5000.00"
+      },
+      "net": "4500.00"
+    }
+  },
+  "comparison": "ordered full JSON; Decimal serialized as text; no rounding tolerance",
+  "context": {
+    "company": "synthetic_901",
+    "competence": "09/2026",
+    "database": "none",
+    "clock": "not_used",
+    "configuration": "parser_only"
+  },
+  "txt_reference": null,
+  "notes": [
+    "No operational data or original document content copied.",
+    "PDF/Excel parser stage only; no persistence, export or GUI executed."
+  ]
+}
