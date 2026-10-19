@@ -29,7 +29,7 @@ MULTIPART_SCHEMA = {'requestBody': {'required': True, 'content': {'multipart/for
 }}}}}
 
 
-async def read_form(request: Request):
+async def read_form(request: Request, *, max_fields: int = 1):
     body = bytearray()
     async for chunk in request.stream():
         if len(body) + len(chunk) > MAX_BODY_BYTES:
@@ -44,7 +44,7 @@ async def read_form(request: Request):
     try:
         if request.headers.get('content-type', '').split(';')[0].lower() != 'multipart/form-data':
             raise MultiPartException('multipart required')
-        parser = MultiPartParser(request.headers, stream(), max_files=1, max_fields=1, max_part_size=64 * 1024)
+        parser = MultiPartParser(request.headers, stream(), max_files=1, max_fields=max_fields, max_part_size=64 * 1024)
         form = await parser.parse()
         return form
     except (MultiPartException, ValueError):

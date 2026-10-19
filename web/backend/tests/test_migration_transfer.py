@@ -47,7 +47,7 @@ def target():
             # Synthetic, isolated copy of the migrated table definitions.
             Base.metadata.create_all(db)
             db.execute(text('CREATE TABLE alembic_version (version_num varchar(32) PRIMARY KEY)'))
-            db.execute(text("INSERT INTO alembic_version VALUES ('0001')"))
+            db.execute(text("INSERT INTO alembic_version VALUES ('0002')"))
             db.execute(text("INSERT INTO roles (id,name) VALUES(1,'Administrador')"))
             db.execute(text("INSERT INTO users(id,email,password_hash,role_id,is_active) VALUES(1,'admin@example.test','test',1,true)"))
         yield engine
