@@ -247,7 +247,10 @@ com equivalência técnica aos sete casos sintéticos congelados. Contrato, exem
 dependências e limites estão no [guia de formatos](docs/desktop-input-formats.md#api-python-dos-parsers-web).
 A homologação funcional e Windows segue pendente.
 
-Upload e importação completa, validação contábil completa, exportação
+A tela [Upload e prévia de Extrato Mensal](docs/payroll-import-preview.md)
+permite conferir PDF/XLS/XLSX por empresa e competência, sem gravar a folha.
+
+Importação definitiva, validação contábil completa, exportação
 TXT Siagri/Aliare, restauração e migração automática do SQLite não estão implementados.
 O desktop continua sendo o sistema operacional durante a conferência.
 

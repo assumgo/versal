@@ -30,7 +30,12 @@ export async function refreshSession() {
   return refreshFlight;
 }
 export async function request<T>(path: string, options: RequestInit = {}, authenticated = true): Promise<T> {
-  const send = () => fetch(`${base}${path}`, { ...options, credentials: 'include', headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers, ...(authenticated && token ? { Authorization: `Bearer ${token}` } : {}) } });
+  const send = () => {
+    const headers = new Headers(options.headers);
+    if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    if (authenticated && token) headers.set('Authorization', `Bearer ${token}`);
+    return fetch(`${base}${path}`, { ...options, credentials: 'include', headers });
+  };
   const session = generation;
   const ensureSession = () => { if (authenticated && session !== generation) throw new ApiError(401, 'A sessão foi alterada.'); };
   const sentToken = token;
