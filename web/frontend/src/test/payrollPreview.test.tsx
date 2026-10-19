@@ -3,16 +3,31 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { PayrollImportPreview } from '../pages/PayrollImportPreview';
 import { payrollPreview } from '../api/payrollPreview';
+import { payrollImports } from '../api/payrollImports';
+import { ApiError } from '../api/client';
 import { previewCompany, previewResult } from './payrollPreviewFixtures';
 vi.mock('../api/payrollPreview', () => ({ payrollPreview: { generate: vi.fn() } }));
+vi.mock('../api/payrollImports', () => ({ payrollImports: { confirm: vi.fn(), list: vi.fn() } }));
 const generate = vi.mocked(payrollPreview.generate);
+const confirmImport = vi.mocked(payrollImports.confirm);
+const listImports = vi.mocked(payrollImports.list);
 const props = { company: previewCompany, competence: '2026-09', canPreview: true };
 const file = () => new File(['synthetic'], 'input.pdf', { type: 'application/pdf' });
 async function submit() {
-  await userEvent.upload(screen.getByLabelText('Extrato Mensal'), file());
+  const selected = file();
+  await userEvent.upload(screen.getByLabelText('Extrato Mensal'), selected);
   await userEvent.click(screen.getByRole('button', { name: 'Gerar prévia' }));
+  return selected;
 }
-beforeEach(() => { generate.mockReset(); generate.mockResolvedValue(previewResult); });
+beforeEach(() => {
+  generate.mockReset(); generate.mockResolvedValue(previewResult);
+  confirmImport.mockReset(); confirmImport.mockResolvedValue({
+    import_id: 42, company_id: 1, competence: '09/2026', filename: 'input.pdf', size_bytes: 50,
+    sha256: 'a'.repeat(64), imported_at: '2026-10-19T12:00:00Z', employees: 2, rubrics: 4,
+    totals_by_type: { P: '5000.00', D: '500.00', E: '0' }, net_total: '4500.00',
+  });
+  listImports.mockReset().mockResolvedValue({ items: [], offset: 0, limit: 50, total: 0 });
+});
 it('shows preview, exact server totals, all fields and duplicate rubrics', async () => {
   render(<PayrollImportPreview {...props} />);
   await submit();
@@ -36,7 +51,7 @@ it('handles missing company, denied role and inactive company without sending', 
   const { rerender } = render(<PayrollImportPreview {...props} company={null} />);
   expect(screen.getByText('Selecione uma empresa.')).toBeVisible();
   rerender(<PayrollImportPreview {...props} canPreview={false} />);
-  expect(screen.getByText('Sem permissão para enviar documentos.')).toBeVisible();
+  expect(screen.getByText('Sem permissão para consultar importações.')).toBeVisible();
   rerender(<PayrollImportPreview {...props} company={{ ...previewCompany, status: 'Inativa' }} />);
   expect(screen.getByText('Empresa inativa.')).toBeVisible();
   expect(generate).not.toHaveBeenCalled();
@@ -112,4 +127,77 @@ it('discards a pending result after another file or unmount', async () => {
   unmount();
   await act(async () => {});
   expect(latest?.aborted).toBe(true);
+});
+
+it('confirms the exact ready preview and clears it after persisted success', async () => {
+  render(<PayrollImportPreview {...props} />);
+  const selected = await submit();
+  const confirm = await screen.findByRole('button', { name: 'Confirmar importação' });
+  expect(confirm).toBeEnabled();
+  await userEvent.click(confirm);
+  expect(confirmImport.mock.calls[0].slice(0, 4)).toEqual([1, selected, '09/2026', previewResult.sha256]);
+  expect(await screen.findByText(/Importação #42 concluída/)).toBeVisible();
+  expect(screen.queryByText('Prévia pronta para conferência.')).not.toBeInTheDocument();
+});
+
+it('keeps a ready preview after a duplicate conflict and explains the conflict', async () => {
+  confirmImport.mockRejectedValueOnce(new ApiError(409, 'Esta competência já possui uma importação.'));
+  render(<PayrollImportPreview {...props} />);
+  await submit();
+  await userEvent.click(await screen.findByRole('button', { name: 'Confirmar importação' }));
+  expect(await screen.findByText('Esta competência já possui uma importação.')).toBeVisible();
+  expect(screen.getByText('Prévia pronta para conferência.')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Confirmar importação' })).toBeEnabled();
+});
+
+it('allows retrying a transient confirmation error with the same selected file', async () => {
+  confirmImport.mockRejectedValueOnce(new ApiError(503, 'Leitores ocupados.'));
+  render(<PayrollImportPreview {...props} />);
+  await submit();
+  await userEvent.click(await screen.findByRole('button', { name: 'Confirmar importação' }));
+  expect(await screen.findByText('Leitores ocupados.')).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar importação' }));
+  expect(await screen.findByText(/Importação #42 concluída/)).toBeVisible();
+  expect(confirmImport).toHaveBeenCalledTimes(2);
+  expect(confirmImport.mock.calls[0][1]).toBe(confirmImport.mock.calls[1][1]);
+});
+
+it('prevents repeat confirmation while the request is pending', async () => {
+  let resolve!: (value: Awaited<ReturnType<typeof payrollImports.confirm>>) => void;
+  confirmImport.mockReturnValueOnce(new Promise(done => { resolve = done; }));
+  render(<PayrollImportPreview {...props} />);
+  await submit();
+  const button = await screen.findByRole('button', { name: 'Confirmar importação' });
+  await userEvent.click(button);
+  expect(screen.getByRole('button', { name: 'Salvando importação…' })).toBeDisabled();
+  expect(confirmImport).toHaveBeenCalledTimes(1);
+  await act(async () => resolve({
+    import_id: 42, company_id: 1, competence: '09/2026', filename: 'input.pdf', size_bytes: 50,
+    sha256: 'a'.repeat(64), imported_at: '2026-10-19T12:00:00Z', employees: 2, rubrics: 4,
+    totals_by_type: { P: '5000.00', D: '500.00', E: '0' }, net_total: '4500.00',
+  }));
+});
+
+it('lets read-only Consulta users see metadata history without an upload form', async () => {
+  listImports.mockResolvedValueOnce({ items: [{
+    import_id: 12, company_id: 1, competence: '09/2026', filename: 'input.pdf', status: 'Concluída',
+    imported_at: '2026-10-19T12:00:00Z', size_bytes: 50, sha256: 'a'.repeat(64), employees: 2, rubrics: 4,
+  }], offset: 0, limit: 50, total: 1 });
+  render(<PayrollImportPreview {...props} canPreview={false} canRead />);
+  expect(await screen.findByText('09/2026')).toBeVisible();
+  expect(screen.getByText('input.pdf')).toBeVisible();
+  expect(screen.queryByLabelText('Extrato Mensal')).not.toBeInTheDocument();
+  expect(screen.queryByText('Ana Sintética')).not.toBeInTheDocument();
+});
+
+it('paginates the server history for read-only users', async () => {
+  const row = { import_id: 12, company_id: 1, competence: '09/2026', filename: 'input.pdf', status: 'Concluída',
+    imported_at: '2026-10-19T12:00:00Z', size_bytes: 50, sha256: 'a'.repeat(64), employees: 2, rubrics: 4 };
+  listImports.mockResolvedValueOnce({ items: [row], offset: 0, limit: 50, total: 51 })
+    .mockResolvedValueOnce({ items: [{ ...row, import_id: 11 }], offset: 50, limit: 50, total: 51 });
+  render(<PayrollImportPreview {...props} canPreview={false} canRead />);
+  expect(await screen.findByText('input.pdf')).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Próxima' }));
+  await waitFor(() => expect(listImports).toHaveBeenLastCalledWith(1, { offset: 50, limit: 50 }, { signal: expect.any(AbortSignal) }));
+  expect(listImports).toHaveBeenCalledTimes(2);
 });
