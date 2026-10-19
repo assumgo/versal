@@ -188,6 +188,24 @@ async def test_history_paginates_metadata_only(client, accounts, admin_db, monke
 
 
 @pytest.mark.asyncio
+async def test_history_sanitizes_legacy_local_file_path(client, accounts, admin_db):
+    company = accounts[1][0]
+    legacy = PayrollImport(
+        company_id=company.id, competencia='08/2026',
+        arquivo=r'C:\\Users\\Gabriel\\Folha\\folha-antiga.pdf', status='Concluida',
+    )
+    admin_db.add(legacy)
+    admin_db.commit()
+
+    async with client:
+        response = await client.get(endpoint(accounts), headers=auth_headers(accounts))
+
+    assert response.status_code == 200, response.text
+    assert response.json()['items'][0]['filename'] == 'folha-antiga.pdf'
+    assert 'C:\\Users' not in response.text
+
+
+@pytest.mark.asyncio
 async def test_two_concurrent_confirmations_create_only_one_import(monkeypatch):
     import os
     from app.core.security import hash_password

@@ -134,7 +134,8 @@ def list_imports(company: AuthorizedCompany, db: Database, response: Response,
     return PayrollImportHistoryPage(
         items=[PayrollImportHistoryItem(
             import_id=row.id, company_id=company.id, competence=row.competencia,
-            filename=row.arquivo, status=row.status, imported_at=row.data_hora,
+            filename=safe_filename(row.arquivo) if row.arquivo is not None else None,
+            status=row.status, imported_at=row.data_hora,
             size_bytes=row.arquivo_bytes, sha256=row.arquivo_sha256,
             employees=row.quantidade_colaboradores, rubrics=row.quantidade_rubricas,
         ) for row in rows],
