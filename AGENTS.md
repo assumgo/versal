@@ -35,3 +35,15 @@ History uses conventional prefixes: `feat:`, `fix:`, `docs:`, and `chore:` with 
 ## Security & Configuration
 
 Keep `.env` files and credentials untracked. Use distinct database and JWT secrets; `JWT_SECRET_KEY` requires at least 32 characters. Treat all `VITE_*` variables as public.
+
+## Cursor Cloud specific instructions
+
+Cloud Agents do not use Docker Compose. PostgreSQL 16 is installed on the host. The image has no systemd, and package install blocks service starts, so start the cluster with `sudo pg_ctlcluster 16 main start` (the environment start script already does this).
+
+Node.js 24.22.2 lives in `/usr/local/bin`. A Node 22 binary is earlier on the default `PATH` (`/exec-daemon/node` and nvm). Prefix `PATH` with `/usr/local/bin` before `node` or `npm`.
+
+On boot, the start script creates `~/.config/versal-dev/secrets.env` (mode 0600) when it is missing, writes gitignored `web/.env`, `web/backend/.env`, and `web/frontend/.env`, creates the `versal` role and `versal_folha` database, runs `alembic upgrade head`, and seeds `dev-admin@versal.local` only when no users exist. Read that secrets file for the generated database password, JWT secret, and admin password. Do not commit it.
+
+The API listens on port 8000 (tmux session `versal-api`) and Vite on port 5173 (tmux session `versal-web`). `GET http://127.0.0.1:8000/health` returns `{"status":"ok"}`.
+
+From `web/backend`, `.venv/bin/python -m pytest -q` runs the suite. Point `TEST_DATABASE_URL` at a disposable migrated database such as `versal_test`, never `versal_folha`. `bash web/backend/tests/run_postgres.sh` needs Docker, which this environment does not install. From `web/frontend`, with Node 24 on `PATH`, `npm test -- --run` and `npm run build` are the frontend checks.
