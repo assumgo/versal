@@ -5,7 +5,7 @@ import { errorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthProvider';
 import { Alert } from '../components/Alert';
 import { FormField } from '../components/FormField';
-import { dayRange, formatSlot, saoPauloToIso, todayInSaoPaulo } from '../time';
+import { dayRange, formatSlot, saoPauloToIso, TIME_24H, todayInSaoPaulo } from '../time';
 
 export function Agenda() {
   const auth = useAuth();
@@ -18,8 +18,10 @@ export function Agenda() {
   const [formError, setFormError] = useState('');
   const [title, setTitle] = useState('');
   const [roomId, setRoomId] = useState('');
-  const [starts, setStarts] = useState(`${today}T09:00`);
-  const [ends, setEnds] = useState(`${today}T10:00`);
+  const [startDate, setStartDate] = useState(today);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endDate, setEndDate] = useState(today);
+  const [endTime, setEndTime] = useState('10:00');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { listRooms().then(setRooms).catch(cause => setError(errorMessage(cause))); }, []);
@@ -34,14 +36,20 @@ export function Agenda() {
     event.preventDefault();
     setFormError('');
     setError('');
-    if (new Date(saoPauloToIso(ends)) <= new Date(saoPauloToIso(starts))) {
+    if (!TIME_24H.test(startTime) || !TIME_24H.test(endTime)) {
+      setFormError('Use o horário de 24 horas, como 09:30 ou 14:00.');
+      return;
+    }
+    const startsAt = saoPauloToIso(`${startDate}T${startTime}`);
+    const endsAt = saoPauloToIso(`${endDate}T${endTime}`);
+    if (new Date(endsAt) <= new Date(startsAt)) {
       setFormError('O fim precisa ser posterior ao início');
       return;
     }
     setBusy(true);
     try {
       await createReservation({
-        room_id: Number(roomId), title, starts_at: saoPauloToIso(starts), ends_at: saoPauloToIso(ends),
+        room_id: Number(roomId), title, starts_at: startsAt, ends_at: endsAt,
       });
       setTitle('');
       const range = dayRange(day);
@@ -109,8 +117,14 @@ export function Agenda() {
           </select>
         </div>
         <FormField label="Título" value={title} onChange={event => setTitle(event.target.value)} required maxLength={120} />
-        <FormField label="Início" type="datetime-local" value={starts} onChange={event => setStarts(event.target.value)} required />
-        <FormField label="Fim" type="datetime-local" value={ends} onChange={event => setEnds(event.target.value)} required />
+        <div className="when">
+          <FormField label="Data de início" type="date" value={startDate} onChange={event => setStartDate(event.target.value)} required />
+          <FormField label="Hora de início" value={startTime} onChange={event => setStartTime(event.target.value)} required inputMode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="09:00" maxLength={5} />
+        </div>
+        <div className="when">
+          <FormField label="Data de fim" type="date" value={endDate} onChange={event => setEndDate(event.target.value)} required />
+          <FormField label="Hora de fim" value={endTime} onChange={event => setEndTime(event.target.value)} required inputMode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" placeholder="10:00" maxLength={5} />
+        </div>
         <div className="actions"><button type="submit" disabled={busy}>{busy ? 'Reservando…' : 'Reservar'}</button></div>
       </form>
     </section>

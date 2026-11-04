@@ -31,7 +31,7 @@ docker compose exec -e FIRST_ADMIN_NAME='Ada' -e FIRST_ADMIN_EMAIL='ada@example.
 
 O comando exige `ENVIRONMENT=development`, recusa se já existir outro usuário e, se o mesmo administrador já estiver ativo, preserva a senha. A senha fica só na variável de ambiente desta execução.
 
-O administrador cadastra salas e contas. Qualquer usuário ativo reserva uma sala e cancela as próprias reservas. O administrador também cancela reservas de outras pessoas. Dois horários na mesma sala não podem se sobrepor; um pode começar no instante em que o outro termina. Os horários da tela usam America/Sao_Paulo.
+O administrador cadastra salas e contas. Qualquer usuário ativo reserva uma sala e cancela as próprias reservas. O administrador também cancela reservas de outras pessoas. Dois horários na mesma sala não podem se sobrepor; um pode começar no instante em que o outro termina. Os horários da tela usam America/Sao_Paulo, no formato de 24 horas. Depois do login, a aplicação abre o painel com as reservas do dia, da semana e do mês.
 
 ```bash
 docker compose logs -f

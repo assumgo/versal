@@ -23,12 +23,16 @@ it('shows the conflict on the reservation form and keeps the day empty', async (
     return new Response(null, { status: 204 });
   }));
   render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Painel' })).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Agenda' }));
   expect(await screen.findByRole('heading', { name: 'Agenda' })).toBeVisible();
   await screen.findAllByRole('option', { name: 'Sala Verde' });
   await userEvent.selectOptions(screen.getByLabelText('Sala'), '1');
   await userEvent.type(screen.getByLabelText('Título'), 'Planejamento');
-  fireEvent.change(screen.getByLabelText('Início'), { target: { value: '2026-11-04T09:00' } });
-  fireEvent.change(screen.getByLabelText('Fim'), { target: { value: '2026-11-04T10:00' } });
+  fireEvent.change(screen.getByLabelText('Data de início'), { target: { value: '2026-11-04' } });
+  fireEvent.change(screen.getByLabelText('Hora de início'), { target: { value: '09:00' } });
+  fireEvent.change(screen.getByLabelText('Data de fim'), { target: { value: '2026-11-04' } });
+  fireEvent.change(screen.getByLabelText('Hora de fim'), { target: { value: '10:00' } });
   await userEvent.click(screen.getByRole('button', { name: 'Reservar' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('Esta sala já está reservada nesse horário.');
   expect(screen.getByText('Nenhuma reserva neste dia.')).toBeVisible();

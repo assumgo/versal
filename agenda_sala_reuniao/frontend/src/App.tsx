@@ -2,11 +2,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { errorMessage } from './api/client';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { Agenda } from './pages/Agenda';
+import { Dashboard } from './pages/Dashboard';
 import { Login } from './pages/Login';
 import { Rooms } from './pages/Rooms';
 import { Users } from './pages/Users';
 
-const paths = { '/': 'Agenda', '/salas': 'Salas', '/usuarios': 'Usuários' } as const;
+const paths = { '/': 'Painel', '/agenda': 'Agenda', '/salas': 'Salas', '/usuarios': 'Usuários' } as const;
 type Page = keyof typeof paths;
 
 function Shell({ path, onNavigate, children }: { path: Page; onNavigate: (path: Page) => void; children: ReactNode }) {
@@ -45,7 +46,7 @@ function SessionApp() {
   if (auth.loading) return <p className="loading-state"><span className="spinner" aria-hidden="true" />Carregando…</p>;
   if (!auth.user) return <Login onSuccess={() => navigate('/')} />;
   const current = (path in paths ? path : '/') as Page;
-  const page = current === '/salas' ? <Rooms /> : current === '/usuarios' ? <Users /> : <Agenda />;
+  const page = current === '/agenda' ? <Agenda /> : current === '/salas' ? <Rooms /> : current === '/usuarios' ? <Users /> : <Dashboard />;
   return <Shell path={current} onNavigate={navigate}>{page}</Shell>;
 }
 
