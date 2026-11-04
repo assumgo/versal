@@ -64,7 +64,7 @@ export function Users() {
           <h2>Nova conta</h2>
           <FormField label="Nome" name="name" required maxLength={120} />
           <FormField label="E-mail" name="email" type="email" autoComplete="off" required />
-          <FormField label="Senha" name="password" type="password" autoComplete="new-password" required minLength={12} />
+          <FormField label="Senha" name="password" type="password" autoComplete="new-password" required minLength={8} />
           <label className="check-field"><input type="checkbox" checked={admin} onChange={event => setAdmin(event.target.checked)} /> Administrador</label>
           <div className="actions"><button type="submit" disabled={busy}>{busy ? 'Salvando…' : 'Criar conta'}</button></div>
         </form>

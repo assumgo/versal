@@ -26,7 +26,7 @@ def _credentials(environment: str, name: str | None, email: str | None, password
         )
     except ValidationError:
         raise ValueError(
-            'Defina FIRST_ADMIN_EMAIL válido e FIRST_ADMIN_PASSWORD com 12–1024 caracteres',
+            'Defina FIRST_ADMIN_EMAIL válido e FIRST_ADMIN_PASSWORD com 8–1024 caracteres',
         ) from None
 
 

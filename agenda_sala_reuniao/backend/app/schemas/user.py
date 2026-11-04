@@ -8,7 +8,7 @@ class UserCreate(BaseModel):
 
     name: str = Field(min_length=1, max_length=120)
     email: str = Field(min_length=3, max_length=254, pattern=r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-    password: SecretStr = Field(min_length=12, max_length=1024)
+    password: SecretStr = Field(min_length=8, max_length=1024)
     is_admin: bool = False
 
     @field_validator('name')

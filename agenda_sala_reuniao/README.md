@@ -26,7 +26,7 @@ O health check responde `{"status":"ok"}` e não acessa o banco. As portas padr�
 Nenhuma conta é criada na subida. Com a stack no ar, crie o primeiro administrador só em desenvolvimento:
 
 ```bash
-docker compose exec -e FIRST_ADMIN_NAME='Ada' -e FIRST_ADMIN_EMAIL='ada@example.com' -e FIRST_ADMIN_PASSWORD='uma-senha-de-12+' backend python -m app.scripts.seed_admin
+docker compose exec -e FIRST_ADMIN_NAME='Ada' -e FIRST_ADMIN_EMAIL='ada@example.com' -e FIRST_ADMIN_PASSWORD='uma-senha-de-8+' backend python -m app.scripts.seed_admin
 ```
 
 O comando exige `ENVIRONMENT=development`, recusa se já existir outro usuário e, se o mesmo administrador já estiver ativo, preserva a senha. A senha fica só na variável de ambiente desta execução.
