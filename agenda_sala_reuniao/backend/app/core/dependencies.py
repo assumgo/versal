@@ -39,7 +39,16 @@ def current_user(subject: Annotated[int, Depends(access_subject)], db: Database)
 CurrentUser = Annotated[User, Depends(current_user)]
 
 
-def require_admin(user: CurrentUser) -> User:
+def ready_user(user: CurrentUser) -> User:
+    if user.must_change_password:
+        raise HTTPException(status_code=403, detail='Altere a senha antes de continuar.')
+    return user
+
+
+ReadyUser = Annotated[User, Depends(ready_user)]
+
+
+def require_admin(user: ReadyUser) -> User:
     if not user.is_admin:
         raise HTTPException(status_code=403, detail='Acesso negado')
     return user

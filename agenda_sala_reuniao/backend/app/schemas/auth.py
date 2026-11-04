@@ -32,3 +32,11 @@ class UserResponse(BaseModel):
     email: str
     is_admin: bool
     is_active: bool
+    must_change_password: bool
+
+
+class PasswordChange(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    current_password: SecretStr = Field(min_length=1, max_length=1024)
+    new_password: SecretStr = Field(min_length=8, max_length=1024)

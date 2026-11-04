@@ -2,7 +2,13 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import * as auth from '../api/auth';
 import { onSessionExpired, refreshSession, setToken } from '../api/client';
 
-type Session = { user: auth.User | null; loading: boolean; login: typeof auth.login; logout: () => Promise<void> };
+type Session = {
+  user: auth.User | null;
+  loading: boolean;
+  login: typeof auth.login;
+  logout: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<auth.User>;
+};
 const Context = createContext<Session | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -22,6 +28,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user, loading,
     login: async (email, password) => { const value = await auth.login(email, password); setUser(value); return value; },
     logout: async () => { await auth.logout(); setUser(null); },
+    changePassword: async (currentPassword, newPassword) => {
+      const value = await auth.changePassword(currentPassword, newPassword);
+      setUser(value);
+      return value;
+    },
   }}>{children}</Context.Provider>;
 }
 

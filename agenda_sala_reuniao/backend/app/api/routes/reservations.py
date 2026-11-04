@@ -2,7 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query, Response
 
-from app.core.dependencies import CurrentUser, Database
+from app.core.dependencies import Database, ReadyUser
 from app.schemas.reservation import ReservationCreate, ReservationResponse
 from app.services.reservations import create_reservation, delete_reservation, list_reservations
 
@@ -11,7 +11,7 @@ router = APIRouter(prefix='/api/v1/reservations', tags=['reservations'])
 
 @router.get('', response_model=list[ReservationResponse])
 def index(
-    user: CurrentUser, db: Database,
+    user: ReadyUser, db: Database,
     start: datetime = Query(alias='from'),
     end: datetime = Query(alias='to'),
     room_id: int | None = Query(default=None, ge=1),
@@ -22,12 +22,12 @@ def index(
 
 
 @router.post('', response_model=ReservationResponse, status_code=201)
-def create(payload: ReservationCreate, user: CurrentUser, db: Database) -> ReservationResponse:
+def create(payload: ReservationCreate, user: ReadyUser, db: Database) -> ReservationResponse:
     return create_reservation(db, user, payload)
 
 
 @router.delete('/{reservation_id}', status_code=204)
-def destroy(reservation_id: int, user: CurrentUser, db: Database) -> Response:
+def destroy(reservation_id: int, user: ReadyUser, db: Database) -> Response:
     if reservation_id < 1:
         raise HTTPException(status_code=422, detail='Reserva inválida')
     delete_reservation(db, user, reservation_id)

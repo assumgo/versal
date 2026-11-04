@@ -3,6 +3,7 @@ import { errorMessage } from './api/client';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { Agenda } from './pages/Agenda';
 import { Dashboard } from './pages/Dashboard';
+import { ChangePassword } from './pages/ChangePassword';
 import { Login } from './pages/Login';
 import { Rooms } from './pages/Rooms';
 import { Users } from './pages/Users';
@@ -45,6 +46,7 @@ function SessionApp() {
   }, []);
   if (auth.loading) return <p className="loading-state"><span className="spinner" aria-hidden="true" />Carregando…</p>;
   if (!auth.user) return <Login onSuccess={() => navigate('/')} />;
+  if (auth.user.must_change_password) return <ChangePassword />;
   const current = (path in paths ? path : '/') as Page;
   const page = current === '/agenda' ? <Agenda /> : current === '/salas' ? <Rooms /> : current === '/usuarios' ? <Users /> : <Dashboard />;
   return <Shell path={current} onNavigate={navigate}>{page}</Shell>;

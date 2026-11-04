@@ -4,8 +4,9 @@ from fastapi import APIRouter, Request, Response
 
 from app.core.config import get_settings
 from app.core.dependencies import CurrentUser, Database, unauthorized
-from app.schemas.auth import AccessTokenResponse, LoginRequest, UserResponse
+from app.schemas.auth import AccessTokenResponse, LoginRequest, PasswordChange, UserResponse
 from app.services.auth import AuthenticationError, TokenPair, authenticate, revoke_refresh, rotate_refresh
+from app.services.users import change_password
 
 router = APIRouter(prefix='/api/v1/auth', tags=['auth'])
 COOKIE_NAME = 'refresh_token'
@@ -64,3 +65,10 @@ def logout(request: Request, db: Database) -> Response:
 @router.get('/me', response_model=UserResponse)
 def me(user: CurrentUser) -> UserResponse:
     return UserResponse.model_validate(user)
+
+
+@router.post('/password', response_model=UserResponse)
+def password(payload: PasswordChange, user: CurrentUser, db: Database) -> UserResponse:
+    return UserResponse.model_validate(change_password(
+        db, user, payload.current_password.get_secret_value(), payload.new_password.get_secret_value(),
+    ))

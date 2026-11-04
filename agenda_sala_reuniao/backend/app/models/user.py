@@ -14,6 +14,7 @@ class User(IdentityMixin, TimestampMixin, Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     is_admin: Mapped[bool] = mapped_column(Boolean, server_default=text('false'))
     is_active: Mapped[bool] = mapped_column(Boolean, server_default=text('true'))
+    must_change_password: Mapped[bool] = mapped_column(Boolean, server_default=text('false'), default=False)
     refresh_tokens: Mapped[list['RefreshToken']] = relationship(back_populates='user')
 
 

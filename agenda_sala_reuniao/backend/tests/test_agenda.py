@@ -70,6 +70,58 @@ async def test_anonymous_requests_are_rejected(client):
     assert (await http.get('/api/v1/reservations', params={'from': START.isoformat(), 'to': LATER.isoformat()})).status_code == 401
 
 
+async def test_new_user_must_change_password_before_using_the_agenda(client):
+    http, admin, _member = client
+    admin_headers = await login(http, admin.email)
+    created = await http.post('/api/v1/users', json={
+        'name': 'Marina', 'email': 'marina@agenda.test', 'password': 'senha-inicial-123',
+    }, headers=admin_headers)
+    assert created.status_code == 201, created.text
+    assert created.json()['must_change_password'] is True
+    login_response = await http.post('/api/v1/auth/login', json={
+        'email': 'marina@agenda.test', 'password': 'senha-inicial-123',
+    })
+    assert login_response.status_code == 200, login_response.text
+    headers = {'Authorization': f"Bearer {login_response.json()['access_token']}"}
+    blocked = await http.get('/api/v1/rooms', headers=headers)
+    assert blocked.status_code == 403
+    assert blocked.json()['detail'] == 'Altere a senha antes de continuar.'
+    profile = await http.get('/api/v1/auth/me', headers=headers)
+    assert profile.status_code == 200
+    assert profile.json()['must_change_password'] is True
+    same = await http.post('/api/v1/auth/password', json={
+        'current_password': 'senha-inicial-123', 'new_password': 'senha-inicial-123',
+    }, headers=headers)
+    assert same.status_code == 422
+    wrong = await http.post('/api/v1/auth/password', json={
+        'current_password': 'senha-errada', 'new_password': 'senha-nova-456',
+    }, headers=headers)
+    assert wrong.status_code == 422
+    assert wrong.json()['detail'] == 'Senha atual não confere.'
+    changed = await http.post('/api/v1/auth/password', json={
+        'current_password': 'senha-inicial-123', 'new_password': 'senha-nova-456',
+    }, headers=headers)
+    assert changed.status_code == 200, changed.text
+    assert changed.json()['must_change_password'] is False
+    assert (await http.get('/api/v1/rooms', headers=headers)).status_code == 200
+
+
+async def test_admin_can_require_password_change_on_next_access(client):
+    http, admin, member = client
+    admin_headers = await login(http, admin.email)
+    member_login = await http.post('/api/v1/auth/login', json={'email': member.email, 'password': PASSWORD})
+    assert member_login.status_code == 200
+    required = await http.post(f'/api/v1/users/{member.id}/require-password-change', headers=admin_headers)
+    assert required.status_code == 200, required.text
+    assert required.json()['must_change_password'] is True
+    refresh = await http.post('/api/v1/auth/refresh')
+    assert refresh.status_code == 401
+    denied = await http.post(f'/api/v1/users/{member.id}/require-password-change', headers={
+        'Authorization': f"Bearer {member_login.json()['access_token']}",
+    })
+    assert denied.status_code == 403
+
+
 async def test_member_cannot_manage_rooms_or_users(client):
     http, _admin, member = client
     headers = await login(http, member.email)

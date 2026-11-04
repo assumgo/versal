@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.core.dependencies import Administrator, CurrentUser, Database
+from app.core.dependencies import Administrator, Database, ReadyUser
 from app.schemas.room import RoomCreate, RoomResponse, RoomUpdate
 from app.services.rooms import create_room, list_rooms, update_room
 
@@ -8,7 +8,7 @@ router = APIRouter(prefix='/api/v1/rooms', tags=['rooms'])
 
 
 @router.get('', response_model=list[RoomResponse])
-def index(user: CurrentUser, db: Database) -> list[RoomResponse]:
+def index(user: ReadyUser, db: Database) -> list[RoomResponse]:
     return [RoomResponse.model_validate(room) for room in list_rooms(db, user)]
 
 

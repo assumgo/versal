@@ -5,3 +5,6 @@ export const listUsers = () => request<User[]>('/users');
 export const createUser = (body: { name: string; email: string; password: string; is_admin: boolean }) => (
   request<User>('/users', { method: 'POST', body: JSON.stringify(body) })
 );
+export const requirePasswordChange = (id: number) => (
+  request<User>(`/users/${id}/require-password-change`, { method: 'POST' })
+);
