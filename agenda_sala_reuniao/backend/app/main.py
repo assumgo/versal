@@ -1,0 +1,37 @@
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.api.routes.auth import router as auth_router
+from app.api.routes.reservations import router as reservations_router
+from app.api.routes.rooms import router as rooms_router
+from app.api.routes.users import router as users_router
+from app.core.config import get_settings
+
+settings = get_settings()
+app = FastAPI(title=settings.app_name)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in settings.frontend_origins.split(',') if origin.strip()],
+    allow_credentials=True,
+    allow_methods=['GET', 'POST', 'PATCH', 'DELETE'],
+    allow_headers=['Authorization', 'Content-Type'],
+)
+app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(rooms_router)
+app.include_router(reservations_router)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+    errors = [{key: error[key] for key in ('type', 'loc', 'msg')} for error in exc.errors()]
+    return JSONResponse(
+        status_code=422, content={'detail': errors}, headers={'Cache-Control': 'no-store'},
+    )
+
+
+@app.get('/health', tags=['health'])
+def health() -> dict[str, str]:
+    return {'status': 'ok'}
