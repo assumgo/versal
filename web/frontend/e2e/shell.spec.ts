@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/v1/**', async route => {
     const url = route.request().url();
-    const body = url.endsWith('/refresh') ? { access_token: 'test' } : url.endsWith('/me') ? { id: 1, email: 'test@example.com', role: 'Administrador' } : url.endsWith('/companies') ? [{ id: 1, razao: 'Empresa de teste', codigo_siagri: '1', status: 'Ativa' }] : [{ id: 1, nome: 'Pessoa de teste', cpf: null, matricula: '1', cargo: 'Auxiliar', centro_custo: 'Administrativo', codigo_correntista: '1', status: 'Ativo' }];
+    const body = url.includes('/appointments') ? [] : url.endsWith('/refresh') ? { access_token: 'test' } : url.endsWith('/me') ? { id: 1, email: 'test@example.com', role: 'Administrador' } : url.endsWith('/companies') ? [{ id: 1, razao: 'Empresa de teste', codigo_siagri: '1', status: 'Ativa' }] : [{ id: 1, nome: 'Pessoa de teste', cpf: null, matricula: '1', cargo: 'Auxiliar', centro_custo: 'Administrativo', codigo_correntista: '1', status: 'Ativo' }];
     await route.fulfill({ json: body });
   });
 });

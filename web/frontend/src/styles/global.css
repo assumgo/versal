@@ -65,6 +65,20 @@ tbody tr:last-child td { border-bottom: 0; }
 .user-form .form-field input:not([type="checkbox"]), .user-form .form-field select { width: 100%; max-width: 420px; }
 .check-line { display: flex; align-items: center; gap: 8px; margin: 16px 0; font-weight: 700; }
 .check-line input { width: auto; }
+.calendar-panel { padding: 16px; }
+.calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.calendar-head { text-align: center; font-size: 12px; font-weight: 700; color: var(--color-primary); }
+button.calendar-day { min-height: 96px; padding: 8px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; background: white; color: var(--color-text); font-weight: 500; text-align: left; border: 1px solid var(--color-border); }
+button.calendar-day strong { color: var(--color-primary); }
+button.calendar-day:hover, button.calendar-day.is-selected { background: var(--color-soft); }
+button.calendar-day.is-selected { border-color: var(--color-primary); }
+.calendar-chip, .calendar-more { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 700; color: var(--color-primary); }
+.calendar-chip { background: white; border-radius: 4px; padding: 1px 4px; }
+.day-detail { padding: 20px; }
+.day-detail ul { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.day-detail li { border-top: 1px solid var(--color-border); padding-top: 12px; }
+.day-detail textarea { width: 100%; max-width: 420px; min-height: 72px; border: 1px solid var(--color-border); border-radius: 7px; padding: 8px; font: inherit; }
+@media (max-width: 700px) { .calendar { gap: 4px; } button.calendar-day { min-height: 64px; padding: 4px; } .calendar-chip, .calendar-more { display: none; } }
 .field-error { color: var(--color-error); }
 .loading-state { display: flex; gap: 12px; align-items: center; padding: 24px; }
 .spinner { width: 18px; height: 18px; border: 2px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; }

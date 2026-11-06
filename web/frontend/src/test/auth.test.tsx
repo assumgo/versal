@@ -11,7 +11,7 @@ function mockApi(expired = false) {
     if (path.endsWith('/refresh')) return Response.json(expired ? {} : { access_token: 'memory-token' }, { status: expired ? 401 : 200 });
     if (path.endsWith('/login')) return Response.json({ access_token: 'login-token' });
     if (path.endsWith('/me')) return Response.json({ id: 1, email: 'test@example.com', role: 'Administrador', is_active: true });
-    if (path.endsWith('/employees')) return Response.json([]);
+    if (path.endsWith('/employees') || path.includes('/appointments')) return Response.json([]);
     if (path.endsWith('/companies')) return Response.json([company, { ...company, id: 2, razao: 'Empresa Beta' }]);
     return new Response(null, { status: 204 });
   }));

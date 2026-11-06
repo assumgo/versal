@@ -19,13 +19,12 @@ describe('Versal shell', () => {
     expect(screen.getByRole('heading', { name: 'Empresas', level: 1 })).toBeVisible();
     expect(within(nav).getByRole('button', { name: 'Empresas' })).toHaveAttribute('aria-current', 'page');
   });
-  it('shows the original dashboard metrics with clearly identified demo data', () => {
+  it('shows the month calendar and asks for a company before loading appointments', () => {
     render(<App />);
-    for (const label of ['Colaboradores ativos', 'Verbas parametrizadas', 'Importações', 'Pendências']) {
-      expect(screen.getByRole('heading', { name: label })).toBeVisible();
-    }
+    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    expect(screen.getByText('Selecione uma empresa.')).toBeVisible();
+    for (const day of ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']) expect(screen.getByText(day)).toBeVisible();
     expect(screen.getByText(/dados simulados/i)).toBeVisible();
-    expect(screen.getByRole('region', { name: 'Últimas importações' })).toHaveClass('table-scroll');
   });
   it('opens the drawer and closes on navigation, outside click and Escape', async () => {
     render(<App />);
