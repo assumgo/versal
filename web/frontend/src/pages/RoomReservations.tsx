@@ -3,6 +3,7 @@ import { reservations, type Reservation } from '../api/reservations';
 import { Alert } from '../components/Alert';
 import { FormField } from '../components/FormField';
 import { LoadingState } from '../components/LoadingState';
+import { Users } from './Users';
 import { errorMessage } from '../api/client';
 
 const weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -81,8 +82,17 @@ function SavedDialog({ open, onClose }: { open: boolean; onClose: () => void }) 
   </dialog>;
 }
 
-export function RoomReservations({ canWrite = false, now = currentTime, onLogout }: { canWrite?: boolean; now?: () => Date; onLogout?: () => void }) {
-  const [month, setMonth] = useState(() => monthKey(now()));
+const menus = ['Calendário', 'Mês seguinte', 'Usuários'] as const;
+type Menu = typeof menus[number];
+
+export function RoomReservations({ canWrite = false, canManageUsers = false, now = currentTime, onLogout }: { canWrite?: boolean; canManageUsers?: boolean; now?: () => Date; onLogout?: () => void }) {
+  const currentMonth = monthKey(now());
+  const nextMonth = shiftMonth(currentMonth, 1);
+  const [month, setMonth] = useState(currentMonth);
+  const [menu, setMenu] = useState<Menu>('Calendário');
+  const [open, setOpen] = useState(false);
+  const shell = useRef<HTMLDivElement>(null);
+  const wasOpen = useRef(false);
   const grid = monthGrid(month);
   const today = monthKey(now()) === month ? `${month}-${String(now().getDate()).padStart(2, '0')}` : '';
   const rawMonth = new Date(grid.year, grid.number - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
@@ -95,7 +105,39 @@ export function RoomReservations({ canWrite = false, now = currentTime, onLogout
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [clock, setClock] = useState(() => now());
+  const close = () => setOpen(false);
+  function choose(next: Menu) {
+    setMenu(next);
+    if (next === 'Calendário') setMonth(currentMonth);
+    if (next === 'Mês seguinte') setMonth(nextMonth);
+    close();
+  }
   useEffect(() => { document.title = title; return () => { document.title = 'Versal Folha TXT'; }; }, []);
+  useEffect(() => {
+    if (!open) {
+      if (wasOpen.current) shell.current?.querySelector<HTMLButtonElement>('.menu-trigger')?.focus();
+      wasOpen.current = false;
+      return;
+    }
+    wasOpen.current = true;
+    const desktop = window.matchMedia('(min-width: 901px)');
+    const handleViewport = () => { if (desktop.matches) setOpen(false); };
+    desktop.addEventListener('change', handleViewport);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    shell.current?.querySelector<HTMLButtonElement>('.drawer-close')?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close();
+      if (event.key !== 'Tab') return;
+      const buttons = shell.current?.querySelectorAll<HTMLButtonElement>('.sidebar button');
+      if (!buttons?.length) return;
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener('keydown', handleKey); desktop.removeEventListener('change', handleViewport); };
+  }, [open]);
   useEffect(() => { const timer = window.setInterval(() => setClock(now()), 30000); return () => window.clearInterval(timer); }, [now]);
   useEffect(() => {
     let active = true;
@@ -129,9 +171,17 @@ export function RoomReservations({ canWrite = false, now = currentTime, onLogout
     } catch (reason) { setError(errorMessage(reason)); }
     finally { setBusy(false); }
   }
-  return <div className="app-shell reservation-shell"><div className="workspace">
-    <header className="top-header"><div><p className="eyebrow">RESERVA</p><h1>{title}</h1></div><div className="reservation-toolbar"><button type="button" className="secondary" onClick={() => setMonth(current => shiftMonth(current, -1))}>Mês anterior</button><p className="agenda-month">{monthLabel}</p><button type="button" className="secondary" onClick={() => setMonth(current => shiftMonth(current, 1))}>Mês seguinte</button>{onLogout && <button type="button" className="secondary" onClick={onLogout}>Sair</button>}</div></header>
-    <main id="page-content"><div className="agenda">
+  return <div className="app-shell reservation-shell" ref={shell}><a className="skip-link" href="#page-content">Ir para o conteúdo</a>
+    {open && <button className="drawer-backdrop" aria-label="Fechar menu pelo fundo" tabIndex={-1} onClick={close} />}
+    <aside id="sidebar" className={`sidebar${open ? ' is-open' : ''}`}>
+      <button className="drawer-close" onClick={close} aria-label="Fechar menu">×</button>
+      <div className="brand"><img src="/assets/logo_versal_agro.png" alt="Versal Agro Contabilidade" /><strong>{title}</strong></div>
+      <nav aria-label="Navegação principal">{menus.map(item => <button key={item} type="button" aria-current={menu === item ? 'page' : undefined} onClick={() => choose(item)}>{item}</button>)}</nav>
+      <footer>Reserva de Sala · Versal<br />© Versal Agro Contabilidade</footer>
+    </aside>
+    <div className="workspace" inert={open || undefined}>
+    <header className="top-header"><button className="menu-trigger" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded={open} onClick={() => setOpen(true)}>☰</button><div><p className="eyebrow">RESERVA</p><h1>{title}</h1></div><div className="reservation-toolbar">{menu !== 'Usuários' && <p className="agenda-month">{monthLabel}</p>}{onLogout && <button type="button" className="secondary" onClick={onLogout}>Sair</button>}</div></header>
+    <main id="page-content">{menu === 'Usuários' ? <Users canWrite={canManageUsers} /> : <div className="agenda">
       {error && <Alert variant="error">{error}</Alert>}
       {loading ? <LoadingState /> : <div className={`agenda-board${selected ? ' has-day' : ''}`}>
         <section className="panel calendar-panel" aria-label={`Calendário de ${monthLabel}`} style={{ '--calendar-weeks': grid.weeks } as CSSProperties}>
@@ -157,6 +207,6 @@ export function RoomReservations({ canWrite = false, now = currentTime, onLogout
         </section>}
       </div>}
       <SavedDialog open={saved} onClose={() => setSaved(false)} />
-    </div></main>
+    </div>}</main>
   </div></div>;
 }

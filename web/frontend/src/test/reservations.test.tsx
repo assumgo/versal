@@ -15,7 +15,8 @@ it('shows the month, the reservation and finishes it after the end', async () =>
   render(<RoomReservations canWrite now={now} />);
   expect(await screen.findByText((_, element) => element?.classList.contains('calendar-chip') === true && element.textContent === '09:30–10:30 Reunião da sala')).toBeVisible();
   expect(screen.getByRole('heading', { name: 'Reserva de Sala - Versal' })).toBeVisible();
-  expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  expect(screen.getByRole('navigation', { name: 'Navegação principal' }).textContent).toBe('CalendárioMês seguinteUsuários');
+  expect(screen.queryByRole('button', { name: 'Colaboradores' })).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: /15 de outubro de 2026, 1 reserva/ }));
   expect(screen.getByRole('region', { name: 'Reservas do dia' })).toHaveTextContent('Ação: Agendada');
   expect(screen.getByText('Levar o projetor.')).toBeVisible();
