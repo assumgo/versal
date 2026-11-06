@@ -29,6 +29,10 @@ class AppointmentCreate(BaseModel):
         return value.strip() or None
 
 
+class ReservationCreate(AppointmentCreate):
+    ends_at: time
+
+
 class AppointmentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -41,4 +45,20 @@ class AppointmentResponse(BaseModel):
 
     @field_serializer('starts_at')
     def serialize_time(self, value: time) -> str:
+        return value.strftime('%H:%M')
+
+
+class ReservationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    scheduled_date: date
+    starts_at: time
+    ends_at: time
+    title: str
+    details: str | None
+    action: str
+
+    @field_serializer('starts_at', 'ends_at')
+    def serialize_times(self, value: time) -> str:
         return value.strftime('%H:%M')

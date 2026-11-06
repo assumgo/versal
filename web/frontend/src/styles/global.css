@@ -23,6 +23,8 @@ p { color: var(--color-muted); }
 .sidebar nav button[aria-current] { background: var(--color-accent); color: #19330e; box-shadow: inset 4px 0 0 var(--color-primary); }
 .sidebar footer { margin-top: auto; padding-top: 24px; color: var(--color-muted); font-size: .9rem; }
 .workspace { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); min-width: 0; display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+.reservation-shell .workspace { margin-left: 0; width: 100%; }
+.reservation-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; margin-left: auto; }
 .top-header { padding: 16px 28px; border-bottom: 1px solid var(--color-border); background: white; display: flex; align-items: center; gap: 24px; }
 .context-field { min-width: 0; flex: 1; }
 .context-field label { display: block; font-size: .9rem; font-weight: 700; color: var(--color-muted); margin-bottom: 4px; }

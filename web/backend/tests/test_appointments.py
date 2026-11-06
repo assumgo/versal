@@ -21,10 +21,10 @@ def payload(**changes):
 async def test_month_lists_only_the_company_schedule_in_order(client, accounts, admin_db):
     company_id = accounts[1][0].id
     admin_db.add_all([
-        Appointment(company_id=company_id, scheduled_date=date(2026, 10, 15), starts_at=time(14, 0), title='Tarde'),
-        Appointment(company_id=company_id, scheduled_date=date(2026, 10, 15), starts_at=time(9, 0), title='Manhã'),
-        Appointment(company_id=company_id, scheduled_date=date(2026, 11, 1), starts_at=time(8, 0), title='Outro mês'),
-        Appointment(company_id=accounts[1][1].id, scheduled_date=date(2026, 10, 15), starts_at=time(9, 0), title='Outra empresa'),
+        Appointment(company_id=company_id, scheduled_date=date(2026, 10, 15), starts_at=time(14, 0), ends_at=time(15, 0), title='Tarde'),
+        Appointment(company_id=company_id, scheduled_date=date(2026, 10, 15), starts_at=time(9, 0), ends_at=time(10, 0), title='Manhã'),
+        Appointment(company_id=company_id, scheduled_date=date(2026, 11, 1), starts_at=time(8, 0), ends_at=time(9, 0), title='Outro mês'),
+        Appointment(company_id=accounts[1][1].id, scheduled_date=date(2026, 10, 15), starts_at=time(9, 0), ends_at=time(10, 0), title='Outra empresa'),
     ])
     admin_db.commit()
     async with client:

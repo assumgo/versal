@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time, timedelta
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -27,11 +27,18 @@ def list_month(db: Session, company_id: int, month: str) -> list[Appointment]:
     ).order_by(Appointment.scheduled_date, Appointment.starts_at, Appointment.id)))
 
 
+def default_end(starts_at: time) -> time:
+    rolled = datetime.combine(date.min, starts_at.replace(tzinfo=None)) + timedelta(hours=1)
+    if rolled.date() != date.min:
+        return time(23, 59)
+    return rolled.time()
+
+
 def create(db: Session, company_id: int, payload: AppointmentCreate, actor: User, ip: str | None) -> Appointment:
     company = lock_company(db, company_id)
     if company.status != 'Ativa':
         raise HTTPException(status_code=409, detail='Empresa inativa')
-    appointment = Appointment(company_id=company_id, **payload.model_dump())
+    appointment = Appointment(company_id=company_id, ends_at=default_end(payload.starts_at), **payload.model_dump())
     db.add(appointment)
     save(db, appointment, actor, 'appointment.create', 'appointments', company_id, ip,
          payload.model_fields_set)

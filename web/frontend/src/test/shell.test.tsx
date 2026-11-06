@@ -19,11 +19,10 @@ describe('Versal shell', () => {
     expect(screen.getByRole('heading', { name: 'Empresas', level: 1 })).toBeVisible();
     expect(within(nav).getByRole('button', { name: 'Empresas' })).toHaveAttribute('aria-current', 'page');
   });
-  it('shows the month calendar and asks for a company before loading appointments', () => {
+  it('keeps the payroll dashboard apart from room reservations', () => {
     render(<App />);
     expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-    expect(screen.getByText('Selecione uma empresa.')).toBeVisible();
-    for (const day of ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']) expect(screen.getByText(day)).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Reserva de Sala - Versal' })).not.toBeInTheDocument();
     expect(screen.getByText(/dados simulados/i)).toBeVisible();
   });
   it('opens the drawer and closes on navigation, outside click and Escape', async () => {

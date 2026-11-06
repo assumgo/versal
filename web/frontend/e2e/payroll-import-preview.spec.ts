@@ -93,7 +93,7 @@ test('Consulta cannot upload documents', async ({ page }) => {
 test('mobile menu and preview tables preserve viewport width', async ({ page }) => {
   await setup(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/empresas');
   await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
   await page.getByRole('navigation').getByRole('button', { name: 'Importação Folha', exact: true }).click();
   await upload(page);
