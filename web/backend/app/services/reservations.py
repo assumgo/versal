@@ -3,9 +3,10 @@ from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.appointment import Appointment
+from app.models.room import Room
 from app.models.user import User
 from app.schemas.appointment import ReservationCreate, ReservationResponse
 from app.services.appointments import month_bounds
@@ -46,13 +47,19 @@ def present(row: Appointment) -> ReservationResponse:
         'ends_at': row.ends_at,
         'title': row.title,
         'details': row.details,
+        'room_id': row.room_id,
+        'room': row.room.name if row.room is not None else None,
         'action': action_label(row.scheduled_date, row.ends_at),
     })
 
 
+def list_rooms(db: Session) -> list[Room]:
+    return list(db.scalars(select(Room).where(Room.is_active.is_(True)).order_by(Room.name, Room.id)))
+
+
 def list_month(db: Session, month: str) -> list[ReservationResponse]:
     start, end = month_bounds(month)
-    rows = db.scalars(select(Appointment).where(
+    rows = db.scalars(select(Appointment).options(joinedload(Appointment.room)).where(
         Appointment.company_id.is_(None),
         Appointment.scheduled_date >= start,
         Appointment.scheduled_date < end,
@@ -62,7 +69,19 @@ def list_month(db: Session, month: str) -> list[ReservationResponse]:
 
 def create(db: Session, payload: ReservationCreate, actor: User, ip: str | None) -> ReservationResponse:
     validate_window(payload.scheduled_date, payload.starts_at, payload.ends_at)
-    reservation = Appointment(company_id=None, **payload.model_dump())
+    room = db.get(Room, payload.room_id)
+    if room is None or not room.is_active:
+        raise HTTPException(status_code=422, detail='Selecione uma sala.')
+    overlap = db.scalar(select(Appointment.id).where(
+        Appointment.company_id.is_(None),
+        Appointment.room_id == room.id,
+        Appointment.scheduled_date == payload.scheduled_date,
+        Appointment.starts_at < payload.ends_at,
+        Appointment.ends_at > payload.starts_at,
+    ))
+    if overlap is not None:
+        raise HTTPException(status_code=409, detail='A sala já está reservada nesse horário.')
+    reservation = Appointment(company_id=None, room=room, **payload.model_dump())
     db.add(reservation)
     try:
         db.flush()

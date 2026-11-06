@@ -7,9 +7,11 @@ export type Reservation = {
   ends_at: string;
   title: string;
   details: string | null;
+  room_id: number | null;
+  room: string | null;
   action: 'Agendada' | 'Finalizado';
 };
-export type ReservationInput = { scheduled_date: string; starts_at: string; ends_at: string; title: string; details?: string | null };
+export type ReservationInput = { scheduled_date: string; starts_at: string; ends_at: string; title: string; room_id: number; details?: string | null };
 
 export const reservations = {
   list: (month: string) => request<Reservation[]>(`/reservations?month=${month}`),

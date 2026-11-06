@@ -5,7 +5,8 @@ from app.models.user import Role, User, UserCompany, RefreshToken
 from app.models.payroll import Rubric, ChartAccount, FinanceParam, StoredFile, PayrollImport, PayrollLine
 from app.models.audit import AuditLog
 from app.models.appointment import Appointment
+from app.models.room import Room
 
 __all__ = ['Base', 'Company', 'Employee', 'Role', 'User', 'UserCompany', 'RefreshToken',
            'Rubric', 'ChartAccount', 'FinanceParam', 'StoredFile', 'PayrollImport', 'PayrollLine',
-           'AuditLog', 'Appointment']
+           'AuditLog', 'Appointment', 'Room']

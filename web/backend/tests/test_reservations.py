@@ -19,7 +19,7 @@ def freeze(monkeypatch, moment: datetime) -> None:
 
 def payload(**changes):
     return {'scheduled_date': '2026-10-15', 'starts_at': '09:30', 'ends_at': '10:30',
-            'title': '  Reunião da sala  ', 'details': '  Projetor  ', **changes}
+            'title': '  Reunião da sala  ', 'details': '  Projetor  ', 'room_id': 1, **changes}
 
 
 @pytest.mark.asyncio
@@ -33,6 +33,8 @@ async def test_room_reservations_ignore_payroll_appointments(client, accounts, a
         created = await client.post(PATH, headers=headers(accounts), json=payload())
         assert created.status_code == 201, created.text
         assert created.json()['title'] == 'Reunião da sala'
+        assert created.json()['room'] == 'Sala1'
+        assert created.json()['room_id'] == 1
         assert created.json()['details'] == 'Projetor'
         assert created.json()['action'] == 'Agendada'
         assert 'company_id' not in created.json()
@@ -80,3 +82,23 @@ async def test_two_hours_is_allowed_and_finished_after_the_end(client, accounts,
         freeze(monkeypatch, datetime(2026, 10, 15, 11, 0, tzinfo=ZONE))
         listed = await client.get(f'{PATH}?month=2026-10', headers=headers(accounts, 'Consulta'))
     assert listed.json()[0]['action'] == 'Finalizado'
+
+
+@pytest.mark.asyncio
+async def test_room_choice_is_required_and_the_same_room_cannot_overlap(client, accounts, monkeypatch):
+    freeze(monkeypatch, datetime(2026, 10, 15, 8, 0, tzinfo=ZONE))
+    async with client:
+        missing = await client.post(PATH, headers=headers(accounts), json=payload(room_id=99))
+        assert missing.status_code == 422
+        assert 'Selecione uma sala.' in missing.text
+        rooms = await client.get('/api/v1/rooms', headers=headers(accounts, 'Consulta'))
+        assert rooms.status_code == 200
+        assert [room['name'] for room in rooms.json()] == ['Sala1', 'Sala2', 'Sala3']
+        first = await client.post(PATH, headers=headers(accounts), json=payload())
+        assert first.status_code == 201, first.text
+        conflict = await client.post(PATH, headers=headers(accounts), json=payload(starts_at='10:00', ends_at='11:00', title='Outra'))
+        assert conflict.status_code == 409
+        assert 'já está reservada' in conflict.text
+        other = await client.post(PATH, headers=headers(accounts), json=payload(room_id=2, title='Sala ao lado'))
+        assert other.status_code == 201, other.text
+        assert other.json()['room'] == 'Sala2'

@@ -31,6 +31,7 @@ class AppointmentCreate(BaseModel):
 
 class ReservationCreate(AppointmentCreate):
     ends_at: time
+    room_id: int = Field(gt=0)
 
 
 class AppointmentResponse(BaseModel):
@@ -57,6 +58,8 @@ class ReservationResponse(BaseModel):
     ends_at: time
     title: str
     details: str | None
+    room_id: int | None
+    room: str | None
     action: str
 
     @field_serializer('starts_at', 'ends_at')

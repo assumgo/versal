@@ -95,7 +95,7 @@ button.calendar-day.is-today .calendar-date { background: var(--color-primary); 
 .day-detail ul { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .day-detail li { background: var(--color-soft); border-radius: 6px; padding: 12px; }
 .day-detail li p { margin-top: 4px; color: var(--color-text); }
-.day-detail .form-field input, .day-detail textarea { width: 100%; max-width: none; }
+.day-detail .form-field input, .day-detail .form-field select, .day-detail textarea { width: 100%; max-width: none; }
 .day-detail textarea { min-height: 96px; resize: vertical; }
 @media (max-width: 1279px) {
   #page-content:has(.agenda) { overflow: auto; }

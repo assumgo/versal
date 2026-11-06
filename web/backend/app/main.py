@@ -15,6 +15,7 @@ from app.api.routes.payroll_preview import router as payroll_preview_router
 from app.api.routes.payroll_imports import router as payroll_imports_router
 from app.api.routes.appointments import router as appointments_router
 from app.api.routes.reservations import router as reservations_router
+from app.api.routes.rooms import router as rooms_router
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -38,6 +39,7 @@ app.include_router(payroll_preview_router)
 app.include_router(payroll_imports_router)
 app.include_router(appointments_router)
 app.include_router(reservations_router)
+app.include_router(rooms_router)
 
 
 @app.exception_handler(RequestValidationError)

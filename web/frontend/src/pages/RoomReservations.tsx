@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import { reservations, type Reservation } from '../api/reservations';
+import { rooms, type Room } from '../api/rooms';
 import { Alert } from '../components/Alert';
 import { FormField } from '../components/FormField';
 import { LoadingState } from '../components/LoadingState';
@@ -98,6 +99,7 @@ export function RoomReservations({ canWrite = false, canManageUsers = false, now
   const rawMonth = new Date(grid.year, grid.number - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const monthLabel = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1);
   const [rows, setRows] = useState<Reservation[]>([]);
+  const [roomOptions, setRoomOptions] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -113,6 +115,11 @@ export function RoomReservations({ canWrite = false, canManageUsers = false, now
     close();
   }
   useEffect(() => { document.title = title; return () => { document.title = 'Versal Folha TXT'; }; }, []);
+  useEffect(() => {
+    let active = true;
+    rooms.list().then(data => { if (active) setRoomOptions(Array.isArray(data) ? data : []); }).catch(reason => { if (active) setError(errorMessage(reason)); });
+    return () => { active = false; };
+  }, []);
   useEffect(() => {
     if (!open) {
       if (wasOpen.current) shell.current?.querySelector<HTMLButtonElement>('.menu-trigger')?.focus();
@@ -160,12 +167,13 @@ export function RoomReservations({ canWrite = false, canManageUsers = false, now
     const starts = String(data.get('starts_at'));
     const ends = String(data.get('ends_at'));
     const details = String(data.get('details') ?? '').trim();
-    const invalid = reservationError(selected, starts, ends, now());
+    const roomId = Number(data.get('room_id'));
+    const invalid = reservationError(selected, starts, ends, now()) || (roomId ? '' : 'Selecione uma sala.');
     setError(invalid);
     if (invalid) return;
     setBusy(true);
     try {
-      await reservations.create({ scheduled_date: selected, starts_at: starts, ends_at: ends, title: String(data.get('title')), details: details || null });
+      await reservations.create({ scheduled_date: selected, starts_at: starts, ends_at: ends, title: String(data.get('title')), room_id: roomId, details: details || null });
       setSaved(true);
       setRevision(value => value + 1);
     } catch (reason) { setError(errorMessage(reason)); }
@@ -194,7 +202,7 @@ export function RoomReservations({ canWrite = false, canManageUsers = false, now
               return <button key={cell.iso} type="button" className={`calendar-day${selected === cell.iso ? ' is-selected' : ''}${cell.iso === today ? ' is-today' : ''}${cell.weekend ? ' is-weekend' : ''}`} aria-pressed={selected === cell.iso} aria-label={dayName(cell.iso, items.length)} onClick={() => setSelected(cell.iso)}>
                 <span className="calendar-date">{cell.day}</span>
                 <span className="calendar-events">
-                  {shown.map(item => <span key={item.id} className="calendar-chip"><span className="calendar-time">{item.starts_at.slice(0, 5)}–{item.ends_at.slice(0, 5)}</span> <span className="calendar-title">{item.title}</span></span>)}
+                  {shown.map(item => <span key={item.id} className="calendar-chip"><span className="calendar-time">{item.starts_at.slice(0, 5)}–{item.ends_at.slice(0, 5)}</span> <span className="calendar-title">{item.room ? `${item.room} · ` : ''}{item.title}</span></span>)}
                   {items.length > shown.length && <span className="calendar-more">+{items.length - shown.length}</span>}
                 </span>
               </button>;
@@ -202,8 +210,8 @@ export function RoomReservations({ canWrite = false, canManageUsers = false, now
           </div>
         </section>
         {selected && <section className="panel day-detail" aria-label="Reservas do dia"><h2>{formatDay(selected)}</h2>
-          {selectedRows.length === 0 ? <p>Nenhuma reserva neste dia.</p> : <ul>{selectedRows.map(item => <li key={item.id}><strong>{item.starts_at.slice(0, 5)}–{item.ends_at.slice(0, 5)} · {item.title}</strong><p>Ação: {reservationAction(item, clock)}</p>{item.details && <p>{item.details}</p>}</li>)}</ul>}
-          {canWrite && <form onSubmit={schedule} key={`${selected}:${revision}`}><fieldset disabled={busy}><FormField label="Título" name="title" required maxLength={120} /><FormField label="Início" name="starts_at" type="time" required /><FormField label="Fim" name="ends_at" type="time" required /><label className="form-field">Detalhes<textarea name="details" maxLength={500} aria-label="Detalhes" /></label><div className="actions"><button type="submit">Reservar</button></div></fieldset></form>}
+          {selectedRows.length === 0 ? <p>Nenhuma reserva neste dia.</p> : <ul>{selectedRows.map(item => <li key={item.id}><strong>{item.starts_at.slice(0, 5)}–{item.ends_at.slice(0, 5)} · {item.room ? `${item.room} · ` : ''}{item.title}</strong><p>Ação: {reservationAction(item, clock)}</p>{item.details && <p>{item.details}</p>}</li>)}</ul>}
+          {canWrite && <form onSubmit={schedule} key={`${selected}:${revision}`}><fieldset disabled={busy}><label className="form-field">Sala<select name="room_id" required defaultValue=""><option value="">Selecione a sala</option>{roomOptions.map(room => <option key={room.id} value={room.id}>{room.name}</option>)}</select></label><FormField label="Título" name="title" required maxLength={120} /><FormField label="Início" name="starts_at" type="time" required /><FormField label="Fim" name="ends_at" type="time" required /><label className="form-field">Detalhes<textarea name="details" maxLength={500} aria-label="Detalhes" /></label><div className="actions"><button type="submit">Reservar</button></div></fieldset></form>}
         </section>}
       </div>}
       <SavedDialog open={saved} onClose={() => setSaved(false)} />
