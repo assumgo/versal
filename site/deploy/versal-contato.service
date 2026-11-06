@@ -1,0 +1,13 @@
+[Unit]
+Description=Formulário de contato do site Versal Agro
+After=network.target postfix.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/versal-site/contato.py
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
