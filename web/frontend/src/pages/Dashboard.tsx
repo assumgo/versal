@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { appointments, type Appointment } from '../api/appointments';
 import type { Company } from '../api/companies';
 import { Alert } from '../components/Alert';
@@ -21,7 +21,18 @@ function monthGrid(month: string) {
   const [year, number] = month.split('-').map(Number);
   const count = new Date(year, number, 0).getDate();
   const lead = (new Date(year, number - 1, 1).getDay() + 6) % 7;
-  return { year, number, count, lead };
+  const weeks = Math.ceil((lead + count) / 7);
+  const cells = Array.from({ length: weeks * 7 }, (_, index) => {
+    const date = new Date(year, number - 1, 1 - lead + index);
+    const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return { iso, day: date.getDate(), inMonth: date.getMonth() === number - 1, weekend: index % 7 >= 5 };
+  });
+  return { year, number, weeks, cells };
+}
+
+function todayIso() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 function formatDay(iso: string) {
@@ -38,7 +49,9 @@ function dayName(iso: string, count: number) {
 export function Dashboard({ company = null, competence, canWrite = false }: { company?: Company | null; competence?: string; canWrite?: boolean }) {
   const month = parseMonth(competence);
   const grid = monthGrid(month);
-  const monthLabel = new Date(grid.year, grid.number - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const today = todayIso();
+  const rawMonth = new Date(grid.year, grid.number - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const monthLabel = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1);
   const [rows, setRows] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(Boolean(company));
   const [error, setError] = useState('');
@@ -51,7 +64,7 @@ export function Dashboard({ company = null, competence, canWrite = false }: { co
     if (!company) return;
     let active = true;
     setLoading(true); setError(''); setRows([]);
-    appointments.list(company.id, month).then(data => { if (active) setRows(data); }).catch(reason => { if (active) setError(errorMessage(reason)); }).finally(() => { if (active) setLoading(false); });
+    appointments.list(company.id, month).then(data => { if (active) setRows(Array.isArray(data) ? data : []); }).catch(reason => { if (active) setError(errorMessage(reason)); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [company, month, revision]);
   useEffect(() => { setSelected(current => current?.startsWith(month) ? current : null); }, [month, company?.id]);
@@ -75,29 +88,33 @@ export function Dashboard({ company = null, competence, canWrite = false }: { co
     } catch (reason) { setError(errorMessage(reason)); }
     finally { setBusy(false); }
   }
-  return <><div className="page-heading"><div><p className="eyebrow">AGENDA</p><h1>Dashboard</h1><p>Agendamentos de {monthLabel}.</p></div></div>
+  return <div className="agenda">
+    <div className="page-heading agenda-heading"><div><p className="eyebrow">AGENDA</p><h1>Dashboard</h1></div><p className="agenda-month">{monthLabel}</p></div>
     {!company && <Alert>Selecione uma empresa.</Alert>}
     {company?.status === 'Inativa' && <Alert>Empresa inativa: a agenda está disponível somente para consulta.</Alert>}
     {error && <Alert variant="error">{error}</Alert>}{notice && <Alert variant="success">{notice}</Alert>}
-    {loading ? <LoadingState /> : <section className="panel calendar-panel" aria-label={`Calendário de ${monthLabel}`}>
-      <div className="calendar">
-        {weekdays.map(day => <div key={day} className="calendar-head">{day}</div>)}
-        {Array.from({ length: grid.lead }, (_, index) => <div key={`pad-${index}`} />)}
-        {Array.from({ length: grid.count }, (_, index) => {
-          const day = index + 1;
-          const iso = `${month}-${String(day).padStart(2, '0')}`;
-          const items = byDay.get(iso) ?? [];
-          return <button key={iso} type="button" className={`calendar-day${selected === iso ? ' is-selected' : ''}`} aria-pressed={selected === iso} aria-label={dayName(iso, items.length)} onClick={() => setSelected(iso)}>
-            <strong>{day}</strong>
-            {items.slice(0, 2).map(item => <span key={item.id} className="calendar-chip">{item.starts_at.slice(0, 5)} {item.title}</span>)}
-            {items.length > 2 && <span className="calendar-more">+{items.length - 2}</span>}
-          </button>;
-        })}
-      </div>
-    </section>}
-    {selected && !loading && <section className="panel day-detail" aria-label="Agendamentos do dia"><h2>{formatDay(selected)}</h2>
-      {selectedRows.length === 0 ? <p>Nenhum agendamento neste dia.</p> : <ul>{selectedRows.map(item => <li key={item.id}><strong>{item.starts_at.slice(0, 5)} · {item.title}</strong>{item.details && <p>{item.details}</p>}</li>)}</ul>}
-      {writable && <form onSubmit={schedule} key={`${selected}:${revision}`}><fieldset disabled={busy}><FormField label="Título" name="title" required maxLength={120} /><FormField label="Hora" name="starts_at" type="time" required /><label className="form-field">Detalhes<textarea name="details" maxLength={500} aria-label="Detalhes" /></label><div className="actions"><button type="submit">Agendar</button></div></fieldset></form>}
-    </section>}
-  </>;
+    {loading ? <LoadingState /> : <div className={`agenda-board${selected ? ' has-day' : ''}`}>
+      <section className="panel calendar-panel" aria-label={`Calendário de ${monthLabel}`} style={{ '--calendar-weeks': grid.weeks } as CSSProperties}>
+        <div className="calendar">
+          {weekdays.map((day, index) => <div key={day} className={`calendar-head${index >= 5 ? ' is-weekend' : ''}`}>{day}</div>)}
+          {grid.cells.map(cell => {
+            if (!cell.inMonth) return <div key={cell.iso} className={`calendar-outside${cell.weekend ? ' is-weekend' : ''}`} aria-hidden="true"><span>{cell.day}</span></div>;
+            const items = byDay.get(cell.iso) ?? [];
+            const shown = items.slice(0, 3);
+            return <button key={cell.iso} type="button" className={`calendar-day${selected === cell.iso ? ' is-selected' : ''}${cell.iso === today ? ' is-today' : ''}${cell.weekend ? ' is-weekend' : ''}`} aria-pressed={selected === cell.iso} aria-label={dayName(cell.iso, items.length)} onClick={() => setSelected(cell.iso)}>
+              <span className="calendar-date">{cell.day}</span>
+              <span className="calendar-events">
+                {shown.map(item => <span key={item.id} className="calendar-chip"><span className="calendar-time">{item.starts_at.slice(0, 5)}</span> <span className="calendar-title">{item.title}</span></span>)}
+                {items.length > shown.length && <span className="calendar-more">+{items.length - shown.length}</span>}
+              </span>
+            </button>;
+          })}
+        </div>
+      </section>
+      {selected && <section className="panel day-detail" aria-label="Agendamentos do dia"><h2>{formatDay(selected)}</h2>
+        {selectedRows.length === 0 ? <p>Nenhum agendamento neste dia.</p> : <ul>{selectedRows.map(item => <li key={item.id}><strong>{item.starts_at.slice(0, 5)} · {item.title}</strong>{item.details && <p>{item.details}</p>}</li>)}</ul>}
+        {writable && <form onSubmit={schedule} key={`${selected}:${revision}`}><fieldset disabled={busy}><FormField label="Título" name="title" required maxLength={120} /><FormField label="Hora" name="starts_at" type="time" required /><label className="form-field">Detalhes<textarea name="details" maxLength={500} aria-label="Detalhes" /></label><div className="actions"><button type="submit">Agendar</button></div></fieldset></form>}
+      </section>}
+    </div>}
+  </div>;
 }

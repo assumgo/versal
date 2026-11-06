@@ -14,7 +14,7 @@ const item = { id: 8, company_id: 3, scheduled_date: '2026-10-15', starts_at: '0
 it('shows every day of the month, the basic appointment, and its details', async () => {
   vi.mocked(appointments.list).mockResolvedValue([item]);
   render(<Dashboard company={company} competence="2026-10" canWrite />);
-  expect(await screen.findByText('09:30 Fechamento da folha')).toBeVisible();
+  expect(await screen.findByText((_, element) => element?.classList.contains('calendar-chip') === true && element.textContent === '09:30 Fechamento da folha')).toBeVisible();
   expect(screen.getAllByRole('button', { name: /de outubro de 2026/ })).toHaveLength(31);
   await userEvent.click(screen.getByRole('button', { name: /15 de outubro de 2026, 1 agendamento/ }));
   expect(screen.getByRole('region', { name: 'Agendamentos do dia' })).toHaveTextContent('Levar os recibos.');

@@ -12,7 +12,7 @@ no código e nos assets do desktop; não foi executado o aplicativo operacional.
 | Empresa atual na sidebar | Mesmo contexto recebido por `AppShell` e mostrado no cabeçalho |
 | Dashboard → Empresas → Usuários → Colaboradores → Importação Folha → Plano de Contas → Rubricas → Encargos da Empresa → Parametrização Contábil → Parametrização Financeira → Exportação TXT → Backup | Os doze itens, com Usuários após Empresas; item ativo com destaque verde claro e `aria-current` |
 | Cabeçalho de empresa e competência | `Header`, valores recebidos pelo shell; somente leitura nesta demonstração. Seleção integrada à sessão pertence à Task 8 |
-| Colaboradores ativos, Verbas parametrizadas, Importações, Pendências | Substituídos no dashboard por um calendário mensal de agendamentos |
+| Colaboradores ativos, Verbas parametrizadas, Importações, Pendências | Substituídos no dashboard por um calendário mensal grande, com os agendamentos dentro de cada dia |
 | Conteúdo rolável | Documento com rolagem vertical e sidebar independente |
 | Tabelas compactas, cabeçalho verde suave, linhas alternadas | `DataTable` com cabeçalhos semânticos e região focalizável de rolagem horizontal |
 | Cadastro de empresas: ID, código, razão, CNPJ, status | Tabela demonstrativa de `Companies` |
@@ -22,7 +22,7 @@ no código e nos assets do desktop; não foi executado o aplicativo operacional.
 
 Adaptações: abaixo de 901 px a navegação vira drawer com fechamento por item,
 botão, fundo e Escape, contenção e retorno de foco e bloqueio do conteúdo por
-`inert`. No calendário, abaixo de 700 px os chips do dia ficam ocultos e o detalhe continua no painel do dia. O destaque ativo usa texto verde
+`inert`. O dashboard ocupa a área útil com a grade do mês; o dia selecionado abre ao lado, e abaixo de 1280 px esse painel fica sob o calendário. O texto base da aplicação é 17 px. O destaque ativo usa texto verde
 escuro sobre verde claro para melhorar a leitura. Telas dos módulos posteriores
 informam sua indisponibilidade; não executam importação, exportação ou backup.
 Login é componente de prévia, com envio desabilitado, preparado para a Task 8.
