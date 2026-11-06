@@ -70,7 +70,7 @@ function SessionApp() {
   const [extraPage, setExtraPage] = useState<Page | null>(null);
   function navigate(next: string) { window.history.pushState({}, '', next); setPath(next); setExtraPage(null); }
   useEffect(() => { const pop = () => { setPath(window.location.pathname); setExtraPage(null); }; window.addEventListener('popstate', pop); return () => window.removeEventListener('popstate', pop); }, []);
-  const room = path === '/' || path === '/reservas';
+  const room = path === '/' || path === '/reservas' || path === '/agenda' || path === '/agenda/';
   useEffect(() => {
     if (!auth.user || room) { setItems([]); setSelected(''); return; }
     let active = true; setLoading(true); setError('');

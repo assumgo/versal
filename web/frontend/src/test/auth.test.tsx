@@ -29,6 +29,14 @@ it('redirects an anonymous protected route and logs in to the requested screen',
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
 });
+it('shows the room calendar at /agenda', async () => {
+  window.history.replaceState({}, '', '/agenda');
+  mockApi();
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Reserva de Sala - Versal' })).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Calendário' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Empresas' })).not.toBeInTheDocument();
+});
 it('restores the session and switches the active company', async () => {
   window.history.replaceState({}, '', '/empresas');
   const calls = mockApi();
