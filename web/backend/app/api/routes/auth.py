@@ -39,7 +39,7 @@ def _respond(response: Response, pair: TokenPair) -> AccessTokenResponse:
 def login(payload: LoginRequest, request: Request, response: Response,
           db: Annotated[Session, Depends(get_db)]) -> AccessTokenResponse:
     try:
-        pair = authenticate(db, payload.email, payload.password.get_secret_value(), ip_address=_ip(request))
+        pair = authenticate(db, payload.login, payload.password.get_secret_value(), ip_address=_ip(request))
     except AuthenticationError:
         raise unauthorized() from None
     return _respond(response, pair)
@@ -69,4 +69,5 @@ def logout(request: Request, db: Annotated[Session, Depends(get_db)]) -> Respons
 
 @router.get('/me', response_model=UserResponse)
 def me(user: Annotated[User, Depends(current_user)]) -> UserResponse:
-    return UserResponse(id=user.id, email=user.email, role=user.role.name, is_active=user.is_active)
+    return UserResponse(id=user.id, email=user.email, name=user.name, login=user.login,
+                        role=user.role.name, is_active=user.is_active)

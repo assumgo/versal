@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class LoginRequest(BaseModel):
-    email: str = Field(min_length=3, max_length=254)
+    login: str = Field(min_length=3, max_length=80)
     password: SecretStr = Field(min_length=1, max_length=1024)
 
 
@@ -18,5 +18,7 @@ class UserResponse(BaseModel):
 
     id: int
     email: str
+    name: str | None = None
+    login: str | None = None
     role: str
     is_active: bool

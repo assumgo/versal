@@ -10,7 +10,7 @@ no código e nos assets do desktop; não foi executado o aplicativo operacional.
 | Verde `#315f2f`, destaque `#89bf21`, fundo `#f7faf5`, borda `#cfdccc` | Variáveis em `styles/tokens.css` |
 | Sidebar branca, largura 295 px, título “Integrador Folha TXT” | `Sidebar`, fixa no desktop, com rolagem própria |
 | Empresa atual na sidebar | Mesmo contexto recebido por `AppShell` e mostrado no cabeçalho |
-| Dashboard → Empresas → Colaboradores → Importação Folha → Plano de Contas → Rubricas → Encargos da Empresa → Parametrização Contábil → Parametrização Financeira → Exportação TXT → Backup | Todos os onze itens, nomes e ordem preservados; item ativo com destaque verde claro e `aria-current` |
+| Dashboard → Empresas → Usuários → Colaboradores → Importação Folha → Plano de Contas → Rubricas → Encargos da Empresa → Parametrização Contábil → Parametrização Financeira → Exportação TXT → Backup | Os doze itens, com Usuários após Empresas; item ativo com destaque verde claro e `aria-current` |
 | Cabeçalho de empresa e competência | `Header`, valores recebidos pelo shell; somente leitura nesta demonstração. Seleção integrada à sessão pertence à Task 8 |
 | Colaboradores ativos, Verbas parametrizadas, Importações, Pendências | Quatro `StatCard`, mesmos títulos do desktop, valores fictícios |
 | Conteúdo rolável | Documento com rolagem vertical e sidebar independente |

@@ -22,7 +22,7 @@ it('redirects an anonymous protected route and logs in to the requested screen',
   window.history.replaceState({}, '', '/colaboradores');
   mockApi(true);
   render(<App />);
-  await userEvent.type(await screen.findByLabelText('E-mail'), 'test@example.com');
+  await userEvent.type(await screen.findByLabelText('Login'), 'test@example.com');
   await userEvent.type(screen.getByLabelText('Senha'), 'password');
   await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Colaboradores' })).toBeVisible());

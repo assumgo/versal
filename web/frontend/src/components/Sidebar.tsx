@@ -1,4 +1,4 @@
-export const pages = ['Dashboard', 'Empresas', 'Colaboradores', 'Importação Folha', 'Plano de Contas', 'Rubricas', 'Encargos da Empresa', 'Parametrização Contábil', 'Parametrização Financeira', 'Exportação TXT', 'Backup'] as const;
+export const pages = ['Dashboard', 'Empresas', 'Usuários', 'Colaboradores', 'Importação Folha', 'Plano de Contas', 'Rubricas', 'Encargos da Empresa', 'Parametrização Contábil', 'Parametrização Financeira', 'Exportação TXT', 'Backup'] as const;
 export type Page = typeof pages[number];
 
 type Props = { company: string; activePage: Page; open: boolean; onNavigate: (page: Page) => void; onClose: () => void };

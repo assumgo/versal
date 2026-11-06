@@ -12,7 +12,7 @@ test('desktop shell preserves navigation and company context', async ({ page }) 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
-  await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(11);
+  await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(12);
   await expect(page.getByLabel('Empresa ativa')).toBeVisible();
   await page.screenshot({ path: 'test-results/shell-desktop.png', fullPage: true });
 });

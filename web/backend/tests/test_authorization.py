@@ -1,5 +1,7 @@
 """Authorization contracts exercised through HTTP against disposable PostgreSQL."""
 import os
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -11,7 +13,8 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.main import app
 from app.models.audit import AuditLog
 from app.models.company import Company
-from app.models.user import Role, User, UserCompany
+from app.models.payroll import PayrollImport
+from app.models.user import RefreshToken, Role, User, UserCompany
 
 PASSWORD = 'test-only-password-123!'
 USERS = '/api/v1/users'
@@ -87,6 +90,7 @@ async def test_admin_creates_user_and_grants_and_revokes_company_access(client, 
         saved = admin_db.get(User, user_id)
         assert verify_password(PASSWORD, saved.password_hash)
         assert created.json() == {'id': user_id, 'email': 'new@authorization.test',
+                                  'name': None, 'login': 'new@authorization.test',
                                   'role': 'Operador', 'is_active': True}
         endpoint = f'{USERS}/{user_id}/companies/{companies[1].id}'
         granted = await client.put(endpoint, headers=headers(accounts))
@@ -134,6 +138,7 @@ async def test_non_admin_cannot_read_users_or_mutate_administration(client, acco
             ('GET', f'{USERS}/{target}/companies', None),
             ('POST', USERS, payload()), ('PATCH', f'{USERS}/{target}', {'role': 'Administrador'}),
             ('DELETE', f'{USERS}/{target}', None),
+            ('DELETE', f'{USERS}/{target}/permanent', None),
             ('PUT', membership, None), ('DELETE', membership, None),
         ]:
             response = await client.request(method, path, json=body, headers=headers(accounts, role))
@@ -333,3 +338,70 @@ async def test_administrator_can_remove_own_access_when_another_remains(
                                         headers=headers(accounts))
     assert response.status_code == (204 if method == 'DELETE' else 200)
     assert len(admin_db.scalars(select(AuditLog)).all()) == 1
+
+
+@pytest.mark.asyncio
+async def test_admin_updates_name_and_login(client, accounts, admin_db):
+    target = accounts[0]['Consulta']
+    other = accounts[0]['Operador']
+    async with client:
+        changed = await client.patch(f'{USERS}/{target.id}', headers=headers(accounts), json={
+            'name': '  Maria Silva  ', 'login': 'maria',
+        })
+        assert changed.status_code == 200, changed.text
+        assert changed.json()['name'] == 'Maria Silva'
+        assert changed.json()['login'] == 'maria'
+        cleared = await client.patch(f'{USERS}/{target.id}', headers=headers(accounts), json={'name': '   '})
+        assert cleared.status_code == 200, cleared.text
+        assert cleared.json()['name'] is None
+        spaced = await client.patch(f'{USERS}/{target.id}', headers=headers(accounts), json={'login': 'ma ria'})
+        assert spaced.status_code == 422
+        duplicate = await client.patch(f'{USERS}/{other.id}', headers=headers(accounts), json={'login': 'Maria'})
+        assert duplicate.status_code == 409, duplicate.text
+    assert admin_db.get(User, target.id).login == 'maria'
+    assert admin_db.get(User, target.id).name is None
+    assert admin_db.get(User, other.id).login is None
+    assert PASSWORD not in str(admin_db.scalars(select(AuditLog.details)).all())
+
+
+@pytest.mark.asyncio
+async def test_permanent_delete_removes_user_and_detaches_history(client, accounts, admin_db):
+    target = accounts[0]['Consulta']
+    company = accounts[1][0]
+    admin_db.add(RefreshToken(user_id=target.id, token_hash='a' * 64, family_id=uuid4(),
+                              expires_at=datetime.now(timezone.utc) + timedelta(days=1)))
+    admin_db.add(PayrollImport(company_id=company.id, created_by_id=target.id, competencia='10/2026'))
+    admin_db.add(AuditLog(actor_id=target.id, action='auth.login', entity='users', entity_id=target.id))
+    admin_db.commit()
+    async with client:
+        removed = await client.delete(f'{USERS}/{target.id}/permanent', headers=headers(accounts))
+        assert removed.status_code == 204, removed.text
+        still_there = await client.delete(f'{USERS}/{accounts[0]["Administrador"].id}/permanent',
+                                           headers=headers(accounts))
+        assert still_there.status_code == 409, still_there.text
+    assert admin_db.get(User, target.id) is None
+    assert admin_db.scalars(select(RefreshToken).where(RefreshToken.user_id == target.id)).all() == []
+    assert admin_db.scalars(select(UserCompany).where(UserCompany.user_id == target.id)).all() == []
+    imported = admin_db.scalar(select(PayrollImport).where(PayrollImport.competencia == '10/2026'))
+    assert imported.created_by_id is None
+    previous = admin_db.scalar(select(AuditLog).where(AuditLog.action == 'auth.login'))
+    assert previous.actor_id is None
+    event = admin_db.scalar(select(AuditLog).where(AuditLog.action == 'user.delete'))
+    assert event.actor_id == accounts[0]['Administrador'].id
+    assert event.entity_id == target.id
+    assert PASSWORD not in str(event.details)
+    assert 'password' not in str(event.details)
+    assert admin_db.get(User, accounts[0]['Administrador'].id).is_active
+
+
+@pytest.mark.asyncio
+async def test_user_cannot_permanently_delete_self(client, accounts, admin_db):
+    administrator = accounts[0]['Administrador']
+    admin_db.add(User(email='replacement-admin@authorization.test', login='replacement-admin',
+                      role=administrator.role, password_hash=hash_password(PASSWORD), is_active=True))
+    admin_db.commit()
+    async with client:
+        response = await client.delete(f'{USERS}/{administrator.id}/permanent', headers=headers(accounts))
+    assert response.status_code == 409, response.text
+    assert admin_db.get(User, administrator.id) is not None
+    assert admin_db.scalars(select(AuditLog)).all() == []

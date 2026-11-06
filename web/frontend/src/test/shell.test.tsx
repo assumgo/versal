@@ -7,7 +7,7 @@ import { useState } from 'react';
 import type { Page } from '../components/Sidebar';
 function App() { const [page, setPage] = useState<Page>('Dashboard'); return <AppShell company="Empresa Demonstração" competence="2026-10" activePage={page} onNavigate={setPage}><p>dados simulados</p>{page === 'Dashboard' ? <Dashboard /> : <h1>{page}</h1>}</AppShell>; }
 
-const navigation = ['Dashboard', 'Empresas', 'Colaboradores', 'Importação Folha', 'Plano de Contas', 'Rubricas', 'Encargos da Empresa', 'Parametrização Contábil', 'Parametrização Financeira', 'Exportação TXT', 'Backup'];
+const navigation = ['Dashboard', 'Empresas', 'Usuários', 'Colaboradores', 'Importação Folha', 'Plano de Contas', 'Rubricas', 'Encargos da Empresa', 'Parametrização Contábil', 'Parametrização Financeira', 'Exportação TXT', 'Backup'];
 
 describe('Versal shell', () => {
   it('preserves desktop navigation order and updates the active page', async () => {

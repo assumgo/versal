@@ -13,6 +13,7 @@ async def test_openapi_documents_phase_one_routes_and_bearer_auth():
             '/api/v1/auth/logout': {'post'}, '/api/v1/auth/me': {'get'},
             '/api/v1/users': {'get', 'post'},
             '/api/v1/users/{user_id}': {'get', 'patch', 'delete'},
+            '/api/v1/users/{user_id}/permanent': {'delete'},
             '/api/v1/users/{user_id}/companies': {'get'},
             '/api/v1/users/{user_id}/companies/{company_id}': {'put', 'delete'},
             '/api/v1/companies': {'get', 'post'},

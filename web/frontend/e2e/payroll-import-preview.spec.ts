@@ -34,7 +34,7 @@ test('logs in and previews a monthly statement with exact totals and duplicate r
   const mocks = await setup(page, 'Operador', true);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/importacao-folha');
-  await page.getByLabel('E-mail').fill('synthetic@example.test');
+  await page.getByLabel('Login').fill('synthetic@example.test');
   await page.getByLabel('Senha').fill('synthetic-password');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await upload(page);

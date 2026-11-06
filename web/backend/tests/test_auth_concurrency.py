@@ -35,7 +35,7 @@ def concurrent_session():
         with Session(engine) as db:
             suffix = uuid4().hex
             role = Role(name=f'test-{suffix}')
-            user = User(email=f'{suffix}@example.test', role=role,
+            user = User(email=f'{suffix}@example.test', login=f'{suffix}@example.test', role=role,
                         password_hash=hash_password('concurrency-test-password'), is_active=True)
             db.add(user)
             db.flush()

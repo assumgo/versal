@@ -60,7 +60,8 @@ def auth_db():
 
 @pytest.fixture
 def account(auth_db):
-    user = User(email='auth@example.test', password_hash=PasswordHasher().hash(PASSWORD),
+    user = User(email='auth@example.test', login='auth@example.test',
+                password_hash=PasswordHasher().hash(PASSWORD),
                 role=Role(name='Operador'), is_active=True)
     auth_db.add(user)
     auth_db.flush()
@@ -83,7 +84,7 @@ def auth_client(auth_db, account):
 
 async def login(client):
     response = await client.post(f'{AUTH}/login', json={
-        'email': 'auth@example.test', 'password': PASSWORD,
+        'login': 'auth@example.test', 'password': PASSWORD,
     })
     assert response.status_code == 200, response.text
     return response
@@ -141,15 +142,27 @@ async def test_login_sets_protected_cookie_and_persists_hash(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('email,password', [
+@pytest.mark.parametrize('login_name,password', [
     ('auth@example.test', 'incorrect'), ('unknown@example.test', PASSWORD),
 ])
-async def test_login_rejects_invalid_credentials(auth_client, auth_db, email, password):
+async def test_login_rejects_invalid_credentials(auth_client, auth_db, login_name, password):
     async with auth_client as client:
-        response = await client.post(f'{AUTH}/login', json={'email': email, 'password': password})
+        response = await client.post(f'{AUTH}/login', json={'login': login_name, 'password': password})
     assert response.status_code == 401
     assert not response.cookies
     assert auth_db.scalars(select(RefreshToken)).all() == []
+
+
+@pytest.mark.asyncio
+async def test_login_uses_login_not_email(auth_client, auth_db, account):
+    account.login = 'folha.operador'
+    auth_db.flush()
+    async with auth_client as client:
+        rejected = await client.post(f'{AUTH}/login', json={'login': account.email, 'password': PASSWORD})
+        assert rejected.status_code == 401
+        accepted = await client.post(f'{AUTH}/login', json={'login': 'Folha.Operador', 'password': PASSWORD})
+    assert accepted.status_code == 200, accepted.text
+    assert auth_db.scalars(select(RefreshToken)).all()
 
 
 @pytest.mark.asyncio
@@ -158,7 +171,7 @@ async def test_login_rejects_inactive_account(auth_client, auth_db, account):
     auth_db.flush()
     async with auth_client as client:
         response = await client.post(f'{AUTH}/login', json={
-            'email': account.email, 'password': PASSWORD,
+            'login': account.login, 'password': PASSWORD,
         })
     assert response.status_code == 401
     assert auth_db.scalars(select(RefreshToken)).all() == []
@@ -174,6 +187,8 @@ async def test_me_returns_identity_without_secrets(auth_client, account):
     assert response.status_code == 200
     assert response.json()['id'] == account.id
     assert response.json()['email'] == account.email
+    assert response.json()['login'] == account.login
+    assert response.json()['name'] is None
     assert 'password_hash' not in response.json()
     assert 'refresh_tokens' not in response.json()
 
@@ -323,7 +338,7 @@ async def test_invalid_login_payload_does_not_echo_password(auth_client):
     password = 'sensitive-password-' * 100
     async with auth_client as client:
         response = await client.post(f'{AUTH}/login', json={
-            'email': 'auth@example.test', 'password': password,
+            'login': 'auth@example.test', 'password': password,
         })
     assert response.status_code == 422
     assert password not in response.text

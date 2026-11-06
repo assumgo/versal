@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, IdentityMixin, TimestampMixin
@@ -16,12 +16,17 @@ class Role(IdentityMixin, TimestampMixin, Base):
 class User(IdentityMixin, TimestampMixin, Base):
     __tablename__ = 'users'
     email: Mapped[str] = mapped_column(String(254), unique=True)
+    name: Mapped[str | None] = mapped_column(String(120))
+    login: Mapped[str | None] = mapped_column(String(80))
     password_hash: Mapped[str] = mapped_column(String(255))
     role_id: Mapped[int] = mapped_column(ForeignKey('roles.id', ondelete='RESTRICT'), index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, server_default=text('true'))
     role: Mapped[Role] = relationship(back_populates='users')
     memberships: Mapped[list['UserCompany']] = relationship(back_populates='user', passive_deletes='all')
     refresh_tokens: Mapped[list['RefreshToken']] = relationship(back_populates='user', passive_deletes='all')
+
+
+Index('uq_users_login_lower', func.lower(User.login), unique=True)
 
 
 class UserCompany(IdentityMixin, TimestampMixin, Base):
