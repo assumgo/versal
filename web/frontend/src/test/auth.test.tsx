@@ -22,12 +22,27 @@ it('redirects an anonymous protected route and logs in to the requested screen',
   window.history.replaceState({}, '', '/colaboradores');
   mockApi(true);
   render(<App />);
-  await userEvent.type(await screen.findByLabelText('Login'), 'test@example.com');
+  expect(await screen.findByRole('heading', { name: 'Acessar o Integrador Folha TXT' })).toBeVisible();
+  await userEvent.type(screen.getByLabelText('Login'), 'test@example.com');
   await userEvent.type(screen.getByLabelText('Senha'), 'password');
   await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Colaboradores' })).toBeVisible());
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
+});
+it('names the shared login after the room reservation', async () => {
+  window.history.replaceState({}, '', '/login');
+  mockApi(true);
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Reserva de Sala - Versal' })).toBeVisible();
+});
+it('shows the agenda login without leaving /agenda', async () => {
+  window.history.replaceState({}, '', '/agenda');
+  mockApi(true);
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Reserva de Sala - Versal' })).toBeVisible();
+  expect(screen.queryByRole('heading', { name: 'Acessar o Integrador Folha TXT' })).not.toBeInTheDocument();
+  expect(window.location.pathname).toBe('/agenda');
 });
 it('shows the room calendar at /agenda', async () => {
   window.history.replaceState({}, '', '/agenda');
