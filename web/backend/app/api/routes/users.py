@@ -41,6 +41,12 @@ def inactivate_user(user_id: Identifier, request: Request, actor: Administrator,
     return Response(status_code=204)
 
 
+@router.delete('/{user_id}/permanent', status_code=204)
+def delete_user(user_id: Identifier, request: Request, actor: Administrator, db: Database) -> Response:
+    users.delete_user(db, user_id, actor, _ip(request))
+    return Response(status_code=204)
+
+
 @router.get('/{user_id}/companies', response_model=list[MembershipResponse])
 def list_memberships(user_id: Identifier, actor: Administrator, db: Database) -> list[MembershipResponse]:
     users.find_user(db, user_id)

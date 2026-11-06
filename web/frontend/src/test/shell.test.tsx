@@ -7,7 +7,7 @@ import { useState } from 'react';
 import type { Page } from '../components/Sidebar';
 function App() { const [page, setPage] = useState<Page>('Dashboard'); return <AppShell company="Empresa Demonstração" competence="2026-10" activePage={page} onNavigate={setPage}><p>dados simulados</p>{page === 'Dashboard' ? <Dashboard /> : <h1>{page}</h1>}</AppShell>; }
 
-const navigation = ['Dashboard', 'Empresas', 'Colaboradores', 'Importação Folha', 'Plano de Contas', 'Rubricas', 'Encargos da Empresa', 'Parametrização Contábil', 'Parametrização Financeira', 'Exportação TXT', 'Backup'];
+const navigation = ['Dashboard', 'Empresas', 'Usuários', 'Colaboradores', 'Importação Folha', 'Plano de Contas', 'Rubricas', 'Encargos da Empresa', 'Parametrização Contábil', 'Parametrização Financeira', 'Exportação TXT', 'Backup'];
 
 describe('Versal shell', () => {
   it('preserves desktop navigation order and updates the active page', async () => {
@@ -19,13 +19,11 @@ describe('Versal shell', () => {
     expect(screen.getByRole('heading', { name: 'Empresas', level: 1 })).toBeVisible();
     expect(within(nav).getByRole('button', { name: 'Empresas' })).toHaveAttribute('aria-current', 'page');
   });
-  it('shows the original dashboard metrics with clearly identified demo data', () => {
+  it('keeps the payroll dashboard apart from room reservations', () => {
     render(<App />);
-    for (const label of ['Colaboradores ativos', 'Verbas parametrizadas', 'Importações', 'Pendências']) {
-      expect(screen.getByRole('heading', { name: label })).toBeVisible();
-    }
+    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    expect(screen.queryByRole('heading', { name: 'Reserva de Sala - Versal' })).not.toBeInTheDocument();
     expect(screen.getByText(/dados simulados/i)).toBeVisible();
-    expect(screen.getByRole('region', { name: 'Últimas importações' })).toHaveClass('table-scroll');
   });
   it('opens the drawer and closes on navigation, outside click and Escape', async () => {
     render(<App />);

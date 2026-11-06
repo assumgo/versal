@@ -1,11 +1,13 @@
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
+from app.models.audit import AuditLog
 from app.models.company import Company
-from app.models.user import Role, User, UserCompany
+from app.models.payroll import PayrollImport
+from app.models.user import RefreshToken, Role, User, UserCompany
 from app.schemas.user import UserCreate, UserUpdate
 from app.services.audit import write_audit
 
@@ -57,8 +59,16 @@ def _save(db: Session, *, actor: User, action: str, entity: str, row: User | Use
         raise
 
 
+def _login_from_email(email: str) -> str:
+    if len(email) > 80 or any(character.isspace() for character in email):
+        raise HTTPException(status_code=422, detail='Informe um login de 3 a 80 caracteres sem espaços')
+    return email
+
+
 def create_user(db: Session, payload: UserCreate, actor: User, ip: str | None) -> User:
-    user = User(email=payload.email, password_hash=hash_password(payload.password.get_secret_value()),
+    user = User(email=payload.email, name=payload.name,
+                login=payload.login if payload.login is not None else _login_from_email(payload.email),
+                password_hash=hash_password(payload.password.get_secret_value()),
                 role=_role(db, payload.role), is_active=payload.is_active)
     db.add(user)
     _save(db, actor=actor, action='user.create', entity='users', row=user, ip_address=ip)
@@ -92,6 +102,31 @@ def inactivate_user(db: Session, user_id: int, actor: User, ip: str | None) -> N
         _preserve_administrator(db, user, role=user.role.name, is_active=False)
         user.is_active = False
         _save(db, actor=actor, action='user.inactivate', entity='users', row=user, ip_address=ip)
+
+
+def delete_user(db: Session, user_id: int, actor: User, ip: str | None) -> None:
+    _lock_administrators(db)
+    user = find_user(db, user_id, lock=True)
+    _preserve_administrator(db, user, role=user.role.name, is_active=False)
+    if user.id == actor.id:
+        raise HTTPException(status_code=409, detail='Não é possível excluir o próprio usuário')
+    target_id = user.id
+    details = {'email': user.email, 'login': user.login, 'name': user.name}
+    try:
+        write_audit(db, actor_id=actor.id, action='user.delete', entity='users', entity_id=target_id,
+                    details=details, ip_address=ip)
+        db.execute(update(AuditLog).where(AuditLog.actor_id == target_id).values(actor_id=None))
+        db.execute(update(PayrollImport).where(PayrollImport.created_by_id == target_id).values(created_by_id=None))
+        db.execute(delete(RefreshToken).where(RefreshToken.user_id == target_id))
+        db.execute(delete(UserCompany).where(UserCompany.user_id == target_id))
+        db.delete(user)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail='Registro já existente ou vínculo inválido') from None
+    except Exception:
+        db.rollback()
+        raise
 
 
 def change_membership(db: Session, user_id: int, company_id: int, *, grant: bool,

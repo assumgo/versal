@@ -10,9 +10,9 @@ no código e nos assets do desktop; não foi executado o aplicativo operacional.
 | Verde `#315f2f`, destaque `#89bf21`, fundo `#f7faf5`, borda `#cfdccc` | Variáveis em `styles/tokens.css` |
 | Sidebar branca, largura 295 px, título “Integrador Folha TXT” | `Sidebar`, fixa no desktop, com rolagem própria |
 | Empresa atual na sidebar | Mesmo contexto recebido por `AppShell` e mostrado no cabeçalho |
-| Dashboard → Empresas → Colaboradores → Importação Folha → Plano de Contas → Rubricas → Encargos da Empresa → Parametrização Contábil → Parametrização Financeira → Exportação TXT → Backup | Todos os onze itens, nomes e ordem preservados; item ativo com destaque verde claro e `aria-current` |
+| Dashboard → Empresas → Usuários → Colaboradores → Importação Folha → Plano de Contas → Rubricas → Encargos da Empresa → Parametrização Contábil → Parametrização Financeira → Exportação TXT → Backup | Os doze itens, com Usuários após Empresas; item ativo com destaque verde claro e `aria-current` |
 | Cabeçalho de empresa e competência | `Header`, valores recebidos pelo shell; somente leitura nesta demonstração. Seleção integrada à sessão pertence à Task 8 |
-| Colaboradores ativos, Verbas parametrizadas, Importações, Pendências | Quatro `StatCard`, mesmos títulos do desktop, valores fictícios |
+| Colaboradores ativos, Verbas parametrizadas, Importações, Pendências | Permanecem fora da reserva de sala, que não usa o shell da folha |
 | Conteúdo rolável | Documento com rolagem vertical e sidebar independente |
 | Tabelas compactas, cabeçalho verde suave, linhas alternadas | `DataTable` com cabeçalhos semânticos e região focalizável de rolagem horizontal |
 | Cadastro de empresas: ID, código, razão, CNPJ, status | Tabela demonstrativa de `Companies` |
@@ -22,7 +22,7 @@ no código e nos assets do desktop; não foi executado o aplicativo operacional.
 
 Adaptações: abaixo de 901 px a navegação vira drawer com fechamento por item,
 botão, fundo e Escape, contenção e retorno de foco e bloqueio do conteúdo por
-`inert`. Os indicadores passam a duas colunas. O destaque ativo usa texto verde
+`inert`. A reserva de sala fica fora deste shell, em uma grade mensal própria. O texto base da aplicação é 17 px. O destaque ativo usa texto verde
 escuro sobre verde claro para melhorar a leitura. Telas dos módulos posteriores
 informam sua indisponibilidade; não executam importação, exportação ou backup.
 Login é componente de prévia, com envio desabilitado, preparado para a Task 8.

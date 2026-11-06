@@ -15,6 +15,9 @@ import { AccountingReview } from './pages/AccountingReview';
 import { FinanceParams } from './pages/FinanceParams';
 import { Rubrics } from './pages/Rubrics';
 import { PayrollImportPreview } from './pages/PayrollImportPreview';
+import { Users } from './pages/Users';
+import { Dashboard } from './pages/Dashboard';
+import { RoomReservations } from './pages/RoomReservations';
 
 type ShellProps = { company: string; competence: string; activePage: Page; onNavigate: (page: Page) => void; children: ReactNode; context?: (menu: ReactNode) => ReactNode };
 export function AppShell({ company, competence, activePage, onNavigate, children, context }: ShellProps) {
@@ -53,7 +56,7 @@ export function AppShell({ company, competence, activePage, onNavigate, children
     <div className="workspace" inert={open || undefined}>{context ? context(<button className="menu-trigger" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded={open} onClick={() => setOpen(true)}>☰</button>) : <Header company={company} competence={competence} menuOpen={open} onOpenMenu={() => setOpen(true)} />}<main id="page-content" tabIndex={-1}>{children}</main></div>
   </div>;
 }
-const paths: Record<string, Page> = { '/importacao-folha': 'Importação Folha', '/': 'Dashboard', '/empresas': 'Empresas', '/colaboradores': 'Colaboradores', '/plano-de-contas': 'Plano de Contas', '/rubricas': 'Rubricas', '/parametrizacao-financeira': 'Parametrização Financeira', '/parametrizacao-contabil': 'Parametrização Contábil' };
+const paths: Record<string, Page> = { '/importacao-folha': 'Importação Folha', '/painel': 'Dashboard', '/empresas': 'Empresas', '/usuarios': 'Usuários', '/colaboradores': 'Colaboradores', '/plano-de-contas': 'Plano de Contas', '/rubricas': 'Rubricas', '/parametrizacao-financeira': 'Parametrização Financeira', '/parametrizacao-contabil': 'Parametrização Contábil' };
 function SessionApp() {
   const auth = useAuth();
   const [path, setPath] = useState(window.location.pathname);
@@ -67,19 +70,23 @@ function SessionApp() {
   const [extraPage, setExtraPage] = useState<Page | null>(null);
   function navigate(next: string) { window.history.pushState({}, '', next); setPath(next); setExtraPage(null); }
   useEffect(() => { const pop = () => { setPath(window.location.pathname); setExtraPage(null); }; window.addEventListener('popstate', pop); return () => window.removeEventListener('popstate', pop); }, []);
+  const agendaTitle = 'Reserva de Sala - Versal';
+  const isAgenda = (next: string) => next === '/' || next === '/reservas' || next === '/agenda' || next === '/agenda/';
+  const room = isAgenda(path);
   useEffect(() => {
-    if (!auth.user) { setItems([]); setSelected(''); return; }
+    if (!auth.user || room) { setItems([]); setSelected(''); return; }
     let active = true; setLoading(true); setError('');
     companies.list().then(data => { if (active) { setItems(data); setSelected(old => data.some(item => String(item.id) === old) ? old : String(data[0]?.id ?? '')); } }).catch(error => { if (active) { setItems([]); setSelected(''); setError(errorMessage(error)); } }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [auth.user, revision]);
+  }, [auth.user, revision, room]);
   if (auth.loading) return <LoadingState />;
-  if (path === '/login') return auth.user ? <LoginRedirect onRedirect={() => navigate(returnTo.current)} /> : <Login onSuccess={() => navigate(returnTo.current)} />;
+  if (path === '/login') return auth.user ? <LoginRedirect onRedirect={() => navigate(returnTo.current)} /> : <Login title={isAgenda(returnTo.current) ? agendaTitle : undefined} onSuccess={() => navigate(returnTo.current)} />;
+  if (room) return auth.user ? <RoomReservations canWrite={['Administrador', 'Contador', 'Operador'].includes(auth.user?.role ?? '')} canManageUsers={auth.user?.role === 'Administrador'} onLogout={() => { void auth.logout().catch(() => undefined); }} /> : <Login title={agendaTitle} onSuccess={() => undefined} />;
   const company = items.find(item => String(item.id) === selected) ?? null;
   const page = extraPage ?? paths[path] ?? 'Dashboard';
   return <ProtectedRoute onLogin={() => { returnTo.current = path; navigate('/login'); }}><AppShell company={company?.razao ?? 'Nenhuma empresa'} competence={competence} activePage={page} onNavigate={page => { const next = Object.entries(paths).find(([, value]) => value === page); if (next) navigate(next[0]); else setExtraPage(page); }} context={menu => <header className="top-header">{menu}<div className="context-field"><label htmlFor="active-company">Empresa ativa</label><select id="active-company" value={selected} disabled={loading} onChange={event => setSelected(event.target.value)}><option value="">Selecione uma empresa</option>{items.map(item => <option key={item.id} value={item.id}>{item.razao ?? item.id}</option>)}</select></div><div className="context-field competence"><label htmlFor="active-competence">Competência ativa</label><input id="active-competence" type="month" value={competence} onChange={event => setCompetence(event.target.value)} /></div><button className="secondary" onClick={() => { void auth.logout().catch(error => setError(errorMessage(error))); }}>Sair</button></header>}>
     {error && <><Alert variant="error">{error}</Alert><button onClick={() => setRevision(value => value + 1)}>Tentar novamente</button></>}
-    {page === 'Importação Folha' ? loading ? <LoadingState /> : <PayrollImportPreview company={company} competence={competence} canRead={['Administrador', 'Contador', 'Operador', 'Consulta'].includes(auth.user?.role ?? '')} canPreview={['Administrador', 'Contador', 'Operador'].includes(auth.user?.role ?? '')} /> : page === 'Parametrização Contábil' ? loading ? <LoadingState /> : <AccountingReview company={company} /> : page === 'Parametrização Financeira' ? loading ? <LoadingState /> : <FinanceParams company={company} canWrite={['Administrador', 'Contador'].includes(auth.user?.role ?? '')} /> : page === 'Rubricas' ? loading ? <LoadingState /> : <Rubrics company={company} canWrite={['Administrador', 'Contador'].includes(auth.user?.role ?? '')} /> : page === 'Plano de Contas' ? loading ? <LoadingState /> : <ChartAccounts company={company} canWrite={['Administrador', 'Contador'].includes(auth.user?.role ?? '')} /> : page === 'Empresas' ? <Companies canWrite={auth.user?.role === 'Administrador'} onChanged={() => setRevision(value => value + 1)} /> : page === 'Colaboradores' ? loading ? <LoadingState /> : <Employees key={selected} company={company} canWrite={['Administrador', 'Operador'].includes(auth.user?.role ?? '')} /> : <><h1>{page}</h1><Alert>{page === 'Dashboard' ? 'Selecione uma empresa e acesse os cadastros de empresas e colaboradores. Os indicadores de folha estarão disponíveis em uma próxima etapa.' : 'Este módulo será disponibilizado em uma próxima etapa.'}</Alert></>}
+    {page === 'Dashboard' ? <Dashboard /> : page === 'Usuários' ? <Users canWrite={auth.user?.role === 'Administrador'} /> : page === 'Importação Folha' ? loading ? <LoadingState /> : <PayrollImportPreview company={company} competence={competence} canRead={['Administrador', 'Contador', 'Operador', 'Consulta'].includes(auth.user?.role ?? '')} canPreview={['Administrador', 'Contador', 'Operador'].includes(auth.user?.role ?? '')} /> : page === 'Parametrização Contábil' ? loading ? <LoadingState /> : <AccountingReview company={company} /> : page === 'Parametrização Financeira' ? loading ? <LoadingState /> : <FinanceParams company={company} canWrite={['Administrador', 'Contador'].includes(auth.user?.role ?? '')} /> : page === 'Rubricas' ? loading ? <LoadingState /> : <Rubrics company={company} canWrite={['Administrador', 'Contador'].includes(auth.user?.role ?? '')} /> : page === 'Plano de Contas' ? loading ? <LoadingState /> : <ChartAccounts company={company} canWrite={['Administrador', 'Contador'].includes(auth.user?.role ?? '')} /> : page === 'Empresas' ? <Companies canWrite={auth.user?.role === 'Administrador'} onChanged={() => setRevision(value => value + 1)} /> : page === 'Colaboradores' ? loading ? <LoadingState /> : <Employees key={selected} company={company} canWrite={['Administrador', 'Operador'].includes(auth.user?.role ?? '')} /> : <><h1>{page}</h1><Alert>Este módulo será disponibilizado em uma próxima etapa.</Alert></>}
   </AppShell></ProtectedRoute>;
 }
 function LoginRedirect({ onRedirect }: { onRedirect: () => void }) { useEffect(onRedirect, []); return null; }

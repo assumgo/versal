@@ -23,7 +23,7 @@ def test_bootstrap_creates_roles_active_admin_and_audit(admin_db):
     assert bootstrap(admin_db) is True
     assert set(admin_db.scalars(select(Role.name))) == {'Administrador', 'Contador', 'Operador', 'Consulta'}
     user = admin_db.scalar(select(User).where(User.email == EMAIL))
-    assert user.is_active and user.role.name == 'Administrador'
+    assert user.is_active and user.role.name == 'Administrador' and user.login == EMAIL
     assert user.password_hash != PASSWORD
     assert verify_password(PASSWORD, user.password_hash)
     event = admin_db.scalar(select(AuditLog))

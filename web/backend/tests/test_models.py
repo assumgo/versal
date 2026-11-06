@@ -13,7 +13,7 @@ def test_initial_schema_has_all_tables():
     assert set(Base.metadata.tables) == {
         'roles', 'users', 'user_companies', 'companies', 'employees', 'rubrics',
         'chart_accounts', 'finance_params', 'imports', 'payroll_lines',
-        'stored_files', 'audit_logs', 'refresh_tokens',
+        'stored_files', 'audit_logs', 'refresh_tokens', 'appointments', 'rooms',
     }
 
 

@@ -11,7 +11,7 @@ function mockApi(expired = false) {
     if (path.endsWith('/refresh')) return Response.json(expired ? {} : { access_token: 'memory-token' }, { status: expired ? 401 : 200 });
     if (path.endsWith('/login')) return Response.json({ access_token: 'login-token' });
     if (path.endsWith('/me')) return Response.json({ id: 1, email: 'test@example.com', role: 'Administrador', is_active: true });
-    if (path.endsWith('/employees')) return Response.json([]);
+    if (path.endsWith('/employees') || path.includes('/appointments') || path.includes('/reservations')) return Response.json([]);
     if (path.endsWith('/companies')) return Response.json([company, { ...company, id: 2, razao: 'Empresa Beta' }]);
     return new Response(null, { status: 204 });
   }));
@@ -22,14 +22,38 @@ it('redirects an anonymous protected route and logs in to the requested screen',
   window.history.replaceState({}, '', '/colaboradores');
   mockApi(true);
   render(<App />);
-  await userEvent.type(await screen.findByLabelText('E-mail'), 'test@example.com');
+  expect(await screen.findByRole('heading', { name: 'Acessar o Integrador Folha TXT' })).toBeVisible();
+  await userEvent.type(screen.getByLabelText('Login'), 'test@example.com');
   await userEvent.type(screen.getByLabelText('Senha'), 'password');
   await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Colaboradores' })).toBeVisible());
   expect(localStorage.length).toBe(0);
   expect(sessionStorage.length).toBe(0);
 });
+it('names the shared login after the room reservation', async () => {
+  window.history.replaceState({}, '', '/login');
+  mockApi(true);
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Reserva de Sala - Versal' })).toBeVisible();
+});
+it('shows the agenda login without leaving /agenda', async () => {
+  window.history.replaceState({}, '', '/agenda');
+  mockApi(true);
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Reserva de Sala - Versal' })).toBeVisible();
+  expect(screen.queryByRole('heading', { name: 'Acessar o Integrador Folha TXT' })).not.toBeInTheDocument();
+  expect(window.location.pathname).toBe('/agenda');
+});
+it('shows the room calendar at /agenda', async () => {
+  window.history.replaceState({}, '', '/agenda');
+  mockApi();
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Reserva de Sala - Versal' })).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Calendário' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Empresas' })).not.toBeInTheDocument();
+});
 it('restores the session and switches the active company', async () => {
+  window.history.replaceState({}, '', '/empresas');
   const calls = mockApi();
   render(<App />);
   await screen.findByRole('option', { name: 'Empresa Beta' });

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -40,9 +40,9 @@ def _audit(db: Session, user: User, action: str, ip_address: str | None) -> None
                 entity_id=user.id, ip_address=ip_address)
 
 
-def authenticate(db: Session, email: str, password: str, *,
+def authenticate(db: Session, login: str, password: str, *,
                  ip_address: str | None = None) -> TokenPair:
-    user = db.scalar(select(User).where(User.email == email).with_for_update())
+    user = db.scalar(select(User).where(func.lower(User.login) == login.lower()).with_for_update())
     if user is None:
         verify_unknown_account(password)
         raise AuthenticationError()

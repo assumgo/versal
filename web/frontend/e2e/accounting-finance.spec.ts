@@ -35,7 +35,7 @@ test('logs in, creates a financial parameter and checks imported accounting move
   await page.setViewportSize({ width: 1440, height: 1000 });
   const { unexpected, writes } = await mockModules(page, 'Contador', false);
   await page.goto('/parametrizacao-financeira');
-  await page.getByLabel('E-mail').fill('synthetic@example.test');
+  await page.getByLabel('Login').fill('synthetic@example.test');
   await page.getByLabel('Senha').fill('synthetic-test-password');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await page.getByRole('button', { name: 'Novo parâmetro', exact: true }).click();

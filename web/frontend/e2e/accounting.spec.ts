@@ -61,7 +61,7 @@ test('logs in, maintains accounts, and saves rubric flags using the desktop rule
   await page.setViewportSize({ width: 1440, height: 1000 });
   const unexpected = await mockCatalogs(page, 'Contador', false);
   await page.goto('/plano-de-contas');
-  await page.getByLabel('E-mail').fill('synthetic@example.test');
+  await page.getByLabel('Login').fill('synthetic@example.test');
   await page.getByLabel('Senha').fill('synthetic-test-password');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Plano de contas', exact: true })).toBeVisible();

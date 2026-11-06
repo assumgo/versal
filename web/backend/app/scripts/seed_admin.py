@@ -42,7 +42,10 @@ def bootstrap_admin(db: Session, *, environment: str, email: str | None,
             if name not in roles:
                 roles[name] = Role(name=name)
                 db.add(roles[name])
-        user = User(email=payload.email, password_hash=hash_password(payload.password.get_secret_value()),
+        if len(payload.email) > 80:
+            raise ValueError('FIRST_ADMIN_EMAIL precisa ter no máximo 80 caracteres para servir de login inicial')
+        user = User(email=payload.email, login=payload.email,
+                    password_hash=hash_password(payload.password.get_secret_value()),
                     role=roles['Administrador'], is_active=True)
         db.add(user)
         db.flush()

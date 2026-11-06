@@ -34,7 +34,7 @@ test('logs in and previews a monthly statement with exact totals and duplicate r
   const mocks = await setup(page, 'Operador', true);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/importacao-folha');
-  await page.getByLabel('E-mail').fill('synthetic@example.test');
+  await page.getByLabel('Login').fill('synthetic@example.test');
   await page.getByLabel('Senha').fill('synthetic-password');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await upload(page);
@@ -93,7 +93,7 @@ test('Consulta cannot upload documents', async ({ page }) => {
 test('mobile menu and preview tables preserve viewport width', async ({ page }) => {
   await setup(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/empresas');
   await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
   await page.getByRole('navigation').getByRole('button', { name: 'Importação Folha', exact: true }).click();
   await upload(page);
