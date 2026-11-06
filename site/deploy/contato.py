@@ -12,6 +12,7 @@ from email.message import EmailMessage
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 RECIPIENT = os.environ.get("CONTACT_TO", "comercial@versalagro.com.br")
+COPY_RECIPIENT = os.environ.get("CONTACT_CC", "ti@versalagro.com.br")
 SENDER = os.environ.get(
     "CONTACT_FROM",
     "Versal Agro <site@UbuntuVersal.tempe.ioflood.net>",
@@ -74,18 +75,43 @@ def allow(ip):
 
 def build_message(company, visitor, reply_to):
     message = EmailMessage()
-    message["Subject"] = f"Contato pelo site — {company}"
+    message["Subject"] = f"Novo contato pelo site — {company}"
     message["From"] = SENDER
     message["To"] = RECIPIENT
+    message["Cc"] = COPY_RECIPIENT
     if reply_to:
         message["Reply-To"] = reply_to
+    if reply_to:
+        interest = (
+            f"A empresa {company} demonstrou interesse e deixou o e-mail {visitor} "
+            "para retorno."
+        )
+        request = (
+            f"Peço que o departamento comercial entre em contato com esse possível "
+            f"cliente pelo e-mail {visitor}."
+        )
+    else:
+        interest = (
+            f"A empresa {company} demonstrou interesse, mas não deixou um e-mail "
+            "no formulário."
+        )
+        request = (
+            "Peço que o departamento comercial procure outro meio e entre em "
+            "contato com esse possível cliente."
+        )
     message.set_content(
         "\n".join(
             [
-                "Mensagem enviada pelo formulário do site Versal Agro.",
+                "Olá, equipe comercial,",
                 "",
-                f"Nome da empresa: {company}",
-                f"E-mail: {visitor}",
+                "Vocês receberam uma nova mensagem vinda do site da Versal Agro.",
+                "",
+                interest,
+                "",
+                request,
+                "",
+                "Obrigado,",
+                "Site Versal Agro",
             ]
         )
     )
@@ -150,7 +176,11 @@ def check():
     assert reply_to == "pessoa@exemplo.com"
     message = build_message(company, visitor, reply_to)
     assert message["To"] == RECIPIENT
-    assert "Empresa 123" in message.get_content()
+    assert message["Cc"] == COPY_RECIPIENT
+    content = message.get_content()
+    assert "Empresa 123" in content
+    assert "pessoa@exemplo.com" in content
+    assert "departamento comercial" in content
     try:
         parse_contact({"formData": {"Email": "a@b.com", "E-mail": ""}})
     except ContactError:
