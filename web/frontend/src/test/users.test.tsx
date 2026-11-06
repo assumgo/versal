@@ -5,7 +5,7 @@ import { ApiError } from '../api/client';
 import { users } from '../api/users';
 import { Users } from '../pages/Users';
 
-vi.mock('../api/users', () => ({ users: { list: vi.fn(), update: vi.fn(), inactivate: vi.fn(), remove: vi.fn() } }));
+vi.mock('../api/users', () => ({ users: { list: vi.fn(), create: vi.fn(), update: vi.fn(), inactivate: vi.fn(), remove: vi.fn() } }));
 afterEach(() => vi.resetAllMocks());
 
 const account = { id: 4, email: 'maria@example.test', name: 'Maria', login: 'maria', role: 'Consulta', is_active: true };
@@ -14,7 +14,22 @@ it('hides administration and does not load users without permission', () => {
   render(<Users canWrite={false} />);
   expect(screen.getByRole('alert')).toHaveTextContent('Sem permissão');
   expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Novo usuário' })).not.toBeInTheDocument();
   expect(users.list).not.toHaveBeenCalled();
+});
+
+it('includes a new user from the heading button', async () => {
+  vi.mocked(users.list).mockResolvedValue([account]);
+  vi.mocked(users.create).mockResolvedValue({ id: 9, email: 'ana@example.test', name: 'Ana', login: 'ana', role: 'Operador', is_active: true });
+  render(<Users canWrite />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Novo usuário' }));
+  await userEvent.type(screen.getByLabelText('Nome'), 'Ana');
+  await userEvent.type(screen.getByLabelText('Login'), 'ana');
+  await userEvent.type(screen.getByLabelText('E-mail'), 'ana@example.test');
+  await userEvent.type(screen.getByLabelText('Senha'), 'senha-segura-12');
+  await userEvent.click(screen.getByRole('button', { name: 'Incluir' }));
+  expect(await screen.findByText('Usuário incluído.')).toBeVisible();
+  expect(users.create).toHaveBeenCalledWith({ name: 'Ana', login: 'ana', email: 'ana@example.test', password: 'senha-segura-12', role: 'Operador' });
 });
 
 it('edits name, login and keeps the administrator switch aligned with the role', async () => {

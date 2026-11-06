@@ -21,6 +21,7 @@ export function Users({ canWrite }: { canWrite: boolean }) {
   const [notice, setNotice] = useState('');
   const [revision, setRevision] = useState(0);
   const [editing, setEditing] = useState<Account | null>(null);
+  const [creating, setCreating] = useState(false);
   const [role, setRole] = useState('Operador');
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState(false);
@@ -32,10 +33,11 @@ export function Users({ canWrite }: { canWrite: boolean }) {
     return () => { active = false; };
   }, [canWrite, revision]);
   if (!canWrite) return <><h1>Usuários</h1><Alert variant="error">Sem permissão para acessar este recurso.</Alert></>;
-  function openEdit(account: Account) { setEditing(account); setRole(account.role); setPending(null); }
+  function openEdit(account: Account) { setEditing(account); setCreating(false); setRole(account.role); setPending(null); }
+  function openCreate() { setCreating(true); setEditing(null); setPending(null); setRole('Operador'); setNotice(''); }
   async function mutate(action: () => Promise<unknown>, message: string) {
     setBusy(true); setError(''); setNotice('');
-    try { await action(); setEditing(null); setPending(null); setNotice(message); setRevision(value => value + 1); }
+    try { await action(); setEditing(null); setCreating(false); setPending(null); setNotice(message); setRevision(value => value + 1); }
     catch (reason) { setError(errorMessage(reason)); }
     finally { setBusy(false); }
   }
@@ -52,14 +54,31 @@ export function Users({ canWrite }: { canWrite: boolean }) {
     if (!Object.keys(changes).length) { setEditing(null); setNotice('Registro salvo.'); return; }
     void mutate(() => users.update(editing.id, changes), 'Registro salvo.');
   }
+  function submitCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!creating || busy) return;
+    const data = new FormData(event.currentTarget);
+    const name = String(data.get('name') ?? '').trim();
+    const login = String(data.get('login') ?? '').trim();
+    void mutate(() => users.create({ name: name || null, login, email: String(data.get('email') ?? '').trim(), password: String(data.get('password') ?? ''), role }), 'Usuário incluído.');
+  }
   function confirm() {
     if (!pending || busy) return;
     const { account, action } = pending;
     const request = action === 'delete' ? () => users.remove(account.id) : action === 'inactivate' ? () => users.inactivate(account.id) : () => users.update(account.id, { is_active: true });
     void mutate(request, confirmCopy[action].done);
   }
-  return <><div className="page-heading"><h1>Usuários</h1></div>
+  return <><div className="page-heading"><h1>Usuários</h1><button type="button" onClick={openCreate}>Novo usuário</button></div>
     {error && <Alert variant="error">{error}</Alert>}{notice && <Alert variant="success">{notice}</Alert>}
+    {creating && <section className="panel user-panel"><h2>Novo usuário</h2><form className="user-form" onSubmit={submitCreate}><fieldset disabled={busy}>
+      <FormField label="Nome" name="name" maxLength={120} />
+      <FormField label="Login" name="login" required minLength={3} maxLength={80} autoComplete="off" />
+      <FormField label="E-mail" name="email" type="email" required maxLength={254} autoComplete="off" />
+      <FormField label="Senha" name="password" type="password" required minLength={12} maxLength={1024} autoComplete="new-password" hint="Mínimo de 12 caracteres." />
+      <div className="form-field"><label htmlFor="new-user-role">Papel</label><select id="new-user-role" value={role} onChange={event => setRole(event.target.value)}>{roles.map(item => <option key={item}>{item}</option>)}</select></div>
+      <label className="check-line" htmlFor="new-user-admin"><input id="new-user-admin" type="checkbox" checked={role === 'Administrador'} onChange={event => setRole(event.target.checked ? 'Administrador' : role === 'Administrador' ? 'Operador' : role)} />Administrador</label>
+      <div className="actions"><button type="submit">Incluir</button><button type="button" className="secondary" onClick={() => setCreating(false)}>Cancelar</button></div>
+    </fieldset></form></section>}
     {editing && <section className="panel user-panel"><h2>Editar usuário</h2><form className="user-form" onSubmit={submit}><fieldset disabled={busy}>
       <FormField label="Nome" name="name" defaultValue={editing.name ?? ''} maxLength={120} />
       <FormField label="Login" name="login" defaultValue={editing.login ?? ''} required minLength={3} maxLength={80} />
