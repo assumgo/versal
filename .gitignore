@@ -23,3 +23,4 @@ coverage/
 
 web/frontend/test-results/
 web/frontend/playwright-report/
+web/frontend/vite.https.config.ts
