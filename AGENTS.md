@@ -44,6 +44,6 @@ Node.js 24.22.2 lives in `/usr/local/bin`. A Node 22 binary is earlier on the de
 
 On boot, the start script creates `~/.config/versal-dev/secrets.env` (mode 0600) when it is missing, writes gitignored `web/.env`, `web/backend/.env`, and `web/frontend/.env`, creates the `versal` role and `versal_folha` database, runs `alembic upgrade head`, and seeds `dev-admin@versal.local` only when no users exist. Read that secrets file for the generated database password, JWT secret, and admin password. Do not commit it.
 
-The API listens on port 8000 (tmux session `versal-api`) and Vite on port 5173 (tmux session `versal-web`). `GET http://127.0.0.1:8000/health` returns `{"status":"ok"}`.
+The API listens on port 8000 (tmux session `versal-api`) and Vite on port 5173 (tmux session `versal-web`), both over HTTPS. The local CA is `~/.config/versal-dev/tls/ca.pem`; the server certificate is `cert.pem` and the key is `key.pem`. Open the app at `https://localhost:5173`. `GET https://127.0.0.1:8000/health` returns `{"status":"ok"}`. The certificate lists `localhost` and `127.0.0.1`. The start script installs the CA into the system trust store. Docker Compose in `web/` stays on HTTP.
 
 From `web/backend`, `.venv/bin/python -m pytest -q` runs the suite. Point `TEST_DATABASE_URL` at a disposable migrated database such as `versal_test`, never `versal_folha`. `bash web/backend/tests/run_postgres.sh` needs Docker, which this environment does not install. From `web/frontend`, with Node 24 on `PATH`, `npm test -- --run` and `npm run build` are the frontend checks.
