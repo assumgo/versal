@@ -1,47 +1,80 @@
+import { useEffect, useRef, useState } from 'react';
 import { bySource, type Announcement } from '../announcements/feed';
 import { useSession } from '../auth/SessionProvider';
 import { Link } from '../components/RouteProvider';
 import { formatPublished, formatToday } from '../format';
-import { shortcuts } from '../shortcuts/catalog';
+import { shortcuts, type Shortcut } from '../shortcuts/catalog';
 import { ShortcutGlyph } from '../shortcuts/icons';
-import { visibleShortcuts } from '../shortcuts/access';
+import { canAccess, safeHref } from '../shortcuts/access';
 
 export function HomePage() {
   const { user } = useSession();
-  if (!user) return null;
-  const available = visibleShortcuts(user.groups, shortcuts);
+  const [blocked, setBlocked] = useState<string | null>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!blocked) return;
+    closeRef.current?.focus();
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setBlocked(null);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [blocked]);
+
+  function select(shortcut: Shortcut) {
+    const href = safeHref(shortcut.href);
+    if (user && canAccess(user.groups, shortcut) && href) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    setBlocked(shortcut.label);
+  }
+
   return (
     <>
       <header className="intro">
         <h1>Página inicial</h1>
         <p>{formatToday()}</p>
       </header>
-      <section className="block" aria-labelledby="atalhos-titulo">
-        <div className="section-head">
-          <h2 id="atalhos-titulo">Atalhos</h2>
-        </div>
-        {available.length === 0 ? (
-          <p className="empty">Nenhum atalho disponível para o seu acesso.</p>
-        ) : (
+      <div className="home-grid">
+        <section className="panel panel-shortcuts" aria-labelledby="atalhos-titulo">
+          <div className="section-head">
+            <h2 id="atalhos-titulo">Atalhos</h2>
+          </div>
           <ul className="shortcut-grid">
-            {available.map(shortcut => (
+            {shortcuts.map(shortcut => (
               <li key={shortcut.id}>
-                <Link to={`/atalhos/${shortcut.id}`} className="shortcut">
+                <button type="button" className="shortcut" onClick={() => select(shortcut)}>
                   <span className="shortcut-icon"><ShortcutGlyph name={shortcut.icon} /></span>
                   <span>
                     <strong>{shortcut.label}</strong>
                     <small>{shortcut.hint}</small>
                   </span>
-                </Link>
+                </button>
               </li>
             ))}
           </ul>
-        )}
-      </section>
-      <div className="boards">
-        <AnnouncementPanel title="Comunicados" source="oficial" />
-        <AnnouncementPanel title="Quadro do Teams" source="teams" />
+        </section>
+        <div className="side-stack">
+          <AnnouncementPanel title="Quadro do Teams" source="teams" />
+          <AnnouncementPanel title="Comunicados" source="oficial" />
+        </div>
       </div>
+      {blocked && (
+        <div className="modal-backdrop" onMouseDown={() => setBlocked(null)}>
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sem-permissao"
+            onMouseDown={event => event.stopPropagation()}
+          >
+            <h2 id="sem-permissao">{blocked}</h2>
+            <p>Você não tem permissão para acessar este local.</p>
+            <button ref={closeRef} type="button" className="primary" onClick={() => setBlocked(null)}>Fechar</button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

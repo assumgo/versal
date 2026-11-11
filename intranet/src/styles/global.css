@@ -169,12 +169,14 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 14px;
+  width: 100%;
   min-height: 84px;
   padding: 14px 16px;
-  background: var(--surface);
+  background: #f7faf5;
   border: 1px solid var(--line);
   border-radius: 14px;
   color: inherit;
+  text-align: left;
 }
 
 .shortcut:hover, .brand:hover, .primary:hover, .section-head a:hover { text-decoration: none; }
@@ -206,12 +208,18 @@ a:hover { text-decoration: underline; }
   stroke-linejoin: round;
 }
 
-.boards {
+.boards, .home-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.9fr);
   gap: 20px;
   align-items: start;
 }
+
+.side-stack { display: grid; gap: 20px; }
+
+.panel-shortcuts { padding-bottom: 18px; }
+
+.panel-shortcuts .shortcut-grid { grid-template-columns: 1fr 1fr; }
 
 .panel {
   padding: 18px 22px 6px;
@@ -258,9 +266,34 @@ a:hover { text-decoration: underline; }
   margin-top: 6px;
   padding: 10px 16px;
   background: var(--accent);
+  border: 0;
   border-radius: 8px;
   color: #fff;
 }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(28, 43, 28, 0.45);
+}
+
+.modal {
+  display: grid;
+  gap: 12px;
+  width: min(420px, 100%);
+  padding: 24px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+
+.modal h2 { font-size: 22px; }
+
+.modal .primary { justify-self: start; }
 
 .primary:hover { background: var(--accent-hover); }
 
@@ -312,8 +345,8 @@ a:hover { text-decoration: underline; }
 
 @media (max-width: 800px) {
   :root { --content: min(1120px, calc(100% - 32px)); }
-  .boards, .footer-inner { display: grid; }
-  .boards { grid-template-columns: 1fr; }
+  .boards, .home-grid, .footer-inner { display: grid; }
+  .boards, .home-grid, .panel-shortcuts .shortcut-grid { grid-template-columns: 1fr; }
   .account-text small { display: none; }
   .intro h1, .gate h1, .signin-card h1 { font-size: 26px; }
 }

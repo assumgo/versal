@@ -3,12 +3,10 @@ import type { ShortcutIcon } from './icons';
 /**
  * Atalhos da página inicial. Substitua esta lista pelos sites internos.
  *
- * `groups` define quem pode ver e abrir o atalho.
- * A pessoa precisa ter pelo menos um desses grupos na sessão.
- * `todos` é o grupo de toda a empresa. Lista vazia não abre para ninguém.
- *
- * A grade esconde o atalho, e o endereço direto também é recusado,
- * quando o usuário logado não tem grupo compatível.
+ * A página mostra todos os atalhos. `groups` só entra na hora do clique:
+ * a pessoa abre o site se tiver pelo menos um desses grupos.
+ * `todos` é o grupo de toda a empresa. Sem grupo compatível, um aviso
+ * informa que não há permissão para o local.
  */
 export type Shortcut = {
   id: string;

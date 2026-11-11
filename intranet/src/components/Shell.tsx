@@ -23,7 +23,7 @@ export function Shell({ children }: { children: ReactNode }) {
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
-  if (!user) return null;
+  const name = user?.name ?? 'Visitante';
   return (
     <div className="app">
       <a className="skip" href="#conteudo">Ir para o conteúdo</a>
@@ -36,15 +36,15 @@ export function Shell({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="account-button"
-              aria-label={`Conta: ${user.name}`}
+              aria-label={`Conta: ${name}`}
               aria-haspopup="menu"
               aria-expanded={open}
               onClick={() => setOpen(value => !value)}
             >
-              <span className="avatar" aria-hidden="true">{initials(user.name)}</span>
+              <span className="avatar" aria-hidden="true">{initials(name)}</span>
               <span className="account-text">
-                <strong>{user.name}</strong>
-                <small>{groupsLabel(user.groups)}</small>
+                <strong>{name}</strong>
+                <small>{user ? groupsLabel(user.groups) : 'Página aberta para todos'}</small>
               </span>
             </button>
             {open && (
@@ -55,14 +55,14 @@ export function Shell({ children }: { children: ReactNode }) {
                     key={person.id}
                     type="button"
                     role="menuitem"
-                    aria-current={person.id === user.id ? 'true' : undefined}
+                    aria-current={person.id === user?.id ? 'true' : undefined}
                     onClick={() => { signIn(person.id); setOpen(false); }}
                   >
                     <strong>{person.name}</strong>
                     <small>{groupsLabel(person.groups)}</small>
                   </button>
                 ))}
-                <button type="button" className="sign-out" role="menuitem" onClick={() => { signOut(); setOpen(false); go('/'); }}>Sair</button>
+                {user && <button type="button" className="sign-out" role="menuitem" onClick={() => { signOut(); setOpen(false); go('/'); }}>Sair</button>}
               </div>
             )}
           </div>
