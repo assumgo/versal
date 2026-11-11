@@ -156,6 +156,37 @@ a:hover { text-decoration: underline; }
 
 .section-head h2 { font-size: 18px; font-weight: 650; }
 
+.text-action, .ghost {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--accent);
+}
+
+.form-field, .checks { display: grid; gap: 6px; }
+
+.form-field input, .form-field select {
+  width: 100%;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.checks { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+
+.checks label, .form-actions { display: flex; align-items: center; gap: 8px; }
+
+fieldset { margin: 0; padding: 0; border: 0; }
+
+legend { margin-bottom: 8px; }
+
+.form-error { color: #a12828; }
+
+.modal-form { width: min(480px, 100%); }
+
+.ghost { padding: 10px 0; }
+
 .shortcut-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

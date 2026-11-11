@@ -1,7 +1,8 @@
 import type { ShortcutIcon } from './icons';
 
 /**
- * Atalhos da página inicial. Substitua esta lista pelos sites internos.
+ * Atalhos iniciais da página. O administrador inclui outros pelo botão
+ * Incluir atalho; esses ficam salvos neste navegador.
  *
  * A página mostra todos os atalhos. `groups` só entra na hora do clique:
  * a pessoa abre o site se tiver pelo menos um desses grupos.

@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { bySource, type Announcement } from '../announcements/feed';
+import { isAdministrator } from '../auth/directory';
 import { useSession } from '../auth/SessionProvider';
 import { Link } from '../components/RouteProvider';
 import { formatPublished, formatToday } from '../format';
-import { shortcuts, type Shortcut } from '../shortcuts/catalog';
+import type { Shortcut } from '../shortcuts/catalog';
 import { ShortcutGlyph } from '../shortcuts/icons';
 import { canAccess, safeHref } from '../shortcuts/access';
+import { addShortcut, listShortcuts, type ShortcutDraft } from '../shortcuts/store';
+import { ShortcutForm } from './ShortcutForm';
 
 export function HomePage() {
   const { user } = useSession();
+  const [items, setItems] = useState(listShortcuts);
+  const [creating, setCreating] = useState(false);
   const [blocked, setBlocked] = useState<string | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -20,6 +25,13 @@ export function HomePage() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [blocked]);
+
+  function create(draft: ShortcutDraft) {
+    const result = addShortcut(draft);
+    if (!result.ok) return result.error;
+    setItems(listShortcuts());
+    return null;
+  }
 
   function select(shortcut: Shortcut) {
     const href = safeHref(shortcut.href);
@@ -40,15 +52,16 @@ export function HomePage() {
         <section className="panel panel-shortcuts" aria-labelledby="atalhos-titulo">
           <div className="section-head">
             <h2 id="atalhos-titulo">Atalhos</h2>
+            {isAdministrator(user) && <button type="button" className="text-action" onClick={() => setCreating(true)}>Incluir atalho</button>}
           </div>
           <ul className="shortcut-grid">
-            {shortcuts.map(shortcut => (
+            {items.map(shortcut => (
               <li key={shortcut.id}>
                 <button type="button" className="shortcut" onClick={() => select(shortcut)}>
                   <span className="shortcut-icon"><ShortcutGlyph name={shortcut.icon} /></span>
                   <span>
                     <strong>{shortcut.label}</strong>
-                    <small>{shortcut.hint}</small>
+                    <small>{shortcut.hint || addressLabel(shortcut.href)}</small>
                   </span>
                 </button>
               </li>
@@ -60,6 +73,7 @@ export function HomePage() {
           <AnnouncementPanel title="Comunicados" source="oficial" />
         </div>
       </div>
+      {creating && <ShortcutForm onClose={() => setCreating(false)} onCreate={create} />}
       {blocked && (
         <div className="modal-backdrop" onMouseDown={() => setBlocked(null)}>
           <div
@@ -77,6 +91,10 @@ export function HomePage() {
       )}
     </>
   );
+}
+
+function addressLabel(href: string) {
+  try { return new URL(href).host; } catch { return ''; }
 }
 
 function AnnouncementPanel({ title, source }: { title: string; source: Announcement['source'] }) {

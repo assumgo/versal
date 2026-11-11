@@ -39,4 +39,35 @@ describe('página inicial', () => {
     expect(screen.getByRole('dialog', { name: 'Pessoas' })).toBeVisible();
     expect(open).toHaveBeenCalledTimes(1);
   });
+
+  it('deixa o administrador incluir o endereço de um atalho novo', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    render(<App />);
+    expect(screen.queryByRole('button', { name: 'Incluir atalho' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Conta: Visitante' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /Time financeiro/ }));
+    expect(screen.queryByRole('button', { name: 'Incluir atalho' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Conta: Time financeiro' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /Administrador/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Incluir atalho' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'Nome' }), 'Contratos');
+    await userEvent.type(screen.getByRole('textbox', { name: 'Endereço' }), 'javascript:alert(1)');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar atalho' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Informe um endereço http ou https.');
+
+    const address = screen.getByRole('textbox', { name: 'Endereço' });
+    await userEvent.clear(address);
+    await userEvent.type(address, 'https://sharepoint.exemplo/sites/contratos');
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Toda a empresa' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Financeiro' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar atalho' }));
+    expect(screen.queryByRole('dialog', { name: 'Incluir atalho' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Contratos/ })).toBeVisible();
+    expect(document.body.innerHTML).not.toContain('sites/contratos');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Conta: Administrador' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /Time financeiro/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Contratos/ }));
+    expect(open).toHaveBeenCalledWith('https://sharepoint.exemplo/sites/contratos', '_blank', 'noopener,noreferrer');
+  });
 });

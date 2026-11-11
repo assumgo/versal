@@ -21,12 +21,15 @@ Abra http://localhost:5174. O menu da conta troca o acesso de exemplo:
 | Acesso geral | Documentos |
 | Time financeiro | Documentos, Folha |
 | RH e operação | Documentos, Pessoas, Benefícios, Operação |
+| Administrador | Documentos, e o botão Incluir atalho |
 
 `npm test -- --run` cobre o clique e o aviso. `npm run build` verifica o TypeScript e gera os arquivos estáticos.
 
-## Definir os atalhos
+## Incluir um atalho
 
-Edite `src/shortcuts/catalog.ts`. Cada item precisa de `id`, `label`, `hint`, `href` http(s) e `groups`.
+Entre como Administrador e use **Incluir atalho**. Informe o nome, o endereço http(s) e os grupos que podem abrir. O atalho entra na grade para todo mundo. Nesta pré-visualização ele fica salvo no navegador. No tenant, o mesmo cadastro passa a gravar a lista do site.
+
+A lista inicial continua em `src/shortcuts/catalog.ts`. Cada item precisa de `id`, `label`, `hint`, `href` http(s) e `groups`.
 
 ```ts
 {

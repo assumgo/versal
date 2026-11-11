@@ -29,6 +29,12 @@ export const directory: readonly DirectoryUser[] = [
     email: 'rh.operacao@versal.local',
     groups: ['todos', 'rh', 'operacao'],
   },
+  {
+    id: 'admin',
+    name: 'Administrador',
+    email: 'admin@versal.local',
+    groups: ['todos', 'administrador'],
+  },
 ];
 
 export const groupLabels: Record<string, string> = {
@@ -37,7 +43,10 @@ export const groupLabels: Record<string, string> = {
   financeiro: 'Financeiro',
   operacao: 'Operação',
   projetos: 'Projetos',
+  administrador: 'Administrador',
 };
+
+export const audienceGroups = ['todos', 'rh', 'financeiro', 'operacao', 'projetos'] as const;
 
 export function labelFor(group: string) {
   return groupLabels[group] ?? group;
@@ -45,6 +54,10 @@ export function labelFor(group: string) {
 
 export function groupsLabel(groups: readonly string[]) {
   return groups.map(labelFor).join(' · ');
+}
+
+export function isAdministrator(user: DirectoryUser | null) {
+  return Boolean(user?.groups.includes('administrador'));
 }
 
 export function findUser(id: string | null) {

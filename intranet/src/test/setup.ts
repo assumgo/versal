@@ -5,5 +5,6 @@ import { afterEach } from 'vitest';
 afterEach(() => {
   cleanup();
   sessionStorage.clear();
+  localStorage.removeItem('intranet.shortcuts');
   window.history.pushState({}, '', '/');
 });
