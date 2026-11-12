@@ -23,3 +23,10 @@ coverage/
 
 web/frontend/test-results/
 web/frontend/playwright-report/
+
+alocacao/frontend/node_modules/
+alocacao/frontend/dist/
+alocacao/frontend/.env
+alocacao/backend/.venv/
+alocacao/backend/.env
+
