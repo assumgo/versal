@@ -1,0 +1,73 @@
+.equipamentos-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.filters-panel .filters-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(160px, 220px) auto;
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.filters-panel .field label,
+.equipamento-form .field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.filters-panel select,
+.equipamento-form input,
+.equipamento-form select {
+  width: 100%;
+  border: 1px solid transparent;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.85rem;
+}
+
+.filters-panel select:focus,
+.equipamento-form input:focus,
+.equipamento-form select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: none;
+}
+
+.filters-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.equipamento-form {
+  gap: 0.9rem;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.row-selected {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+@media (max-width: 900px) {
+  .filters-panel .filters-grid,
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-actions {
+    justify-content: stretch;
+  }
+
+  .filters-actions .btn {
+    width: 100%;
+  }
+}

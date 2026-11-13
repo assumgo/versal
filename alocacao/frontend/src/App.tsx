@@ -5,6 +5,7 @@ import { AppShell } from './components/AppShell';
 import { Categorias } from './pages/Categorias';
 import { Colaboradores } from './pages/Colaboradores';
 import { Dashboard } from './pages/Dashboard';
+import { Equipamentos } from './pages/Equipamentos';
 import { Fornecedores } from './pages/Fornecedores';
 import { Login } from './pages/Login';
 import { PlaceholderPage } from './pages/PlaceholderPage';
@@ -146,17 +147,9 @@ export default function App() {
       <Route
         path="/equipamentos"
         element={
-          <ProtectedShell ctaLabel="+ Novo equipamento">
-            <PlaceholderPage
-              title="Equipamentos"
-              description="Inventário completo dos recursos com status, serial e localização."
-              features={[
-                { title: 'Inventário', text: 'Lista filtrável de todos os ativos.' },
-                { title: 'Status', text: 'Disponível, alocado, manutenção ou baixa.' },
-                { title: 'Histórico', text: 'Linha do tempo de entradas, alocações e TREs.' },
-              ]}
-            />
-          </ProtectedShell>
+          <CrudRoute ctaLabel="+ Novo equipamento">
+            {(createRequest) => <Equipamentos createRequest={createRequest} />}
+          </CrudRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />

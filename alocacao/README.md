@@ -83,7 +83,15 @@ cp .env.example .env
 - `/cadastros/colaboradores` — CRUD (Nome, E-mail pessoal, CPF, Data nascimento, Celular)
 - `/cadastros/fornecedores` — CRUD (Razão social, Nome fantasia, CNPJ/CPF)
 
-APIs: `/api/categorias`, `/api/colaboradores`, `/api/fornecedores`  
+### Equipamentos
+
+- Página `/equipamentos` com grade inicialmente vazia
+- Filtros: Categoria (Todas + cadastradas) e Status (Disponível / Alocado)
+- Botão **Pesquisar** aplica os filtros
+- CRUD: novo/editar/excluir (ID somente leitura na edição)
+- Status **Alocado** quando houver alocação ativa vinculada; caso contrário **Disponível**
+
+APIs: `/api/categorias`, `/api/colaboradores`, `/api/fornecedores`, `/api/equipamentos`  
 Persistência local SQLite em `backend/data/alocacao.db`.
 
 ## Próximos passos
