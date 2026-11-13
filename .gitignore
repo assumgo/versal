@@ -29,4 +29,7 @@ alocacao/frontend/dist/
 alocacao/frontend/.env
 alocacao/backend/.venv/
 alocacao/backend/.env
+alocacao/backend/data/
+alocacao/backend/**/*.db
+
 

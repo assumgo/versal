@@ -8,6 +8,7 @@ import './styles/global.css';
 import './styles/layout.css';
 import './styles/login.css';
 import './styles/dashboard.css';
+import './styles/cadastros.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

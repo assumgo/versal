@@ -77,8 +77,23 @@ cp .env.example .env
 - `frontend/public/logo2.png` — marca reduzida
 - `frontend/public/favicon.png` — favicon
 
+## Cadastros · Categorias
+
+CRUD disponível em `/cadastros` com seed inicial:
+
+1. Notebook  
+2. Monitor  
+3. Periféricos  
+4. Rede  
+5. Desktop  
+6. Servidor  
+
+API: `GET/POST /api/categorias`, `PUT/DELETE /api/categorias/{id}`  
+Persistência local SQLite em `backend/data/alocacao.db`.
+
 ## Próximos passos
 
 1. Persistência PostgreSQL (equipamentos, NFs, alocações, TREs)
 2. Validação de token Entra ID no backend
 3. Fluxos completos de entrada, alocação e emissão de TRE
+

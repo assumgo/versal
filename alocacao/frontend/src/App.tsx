@@ -1,15 +1,36 @@
+import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { AppShell } from './components/AppShell';
+import { Cadastros } from './pages/Cadastros';
 import { Dashboard } from './pages/Dashboard';
 import { Login } from './pages/Login';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 
-function ProtectedShell({ children, ctaLabel }: { children: React.ReactNode; ctaLabel?: string }) {
+function ProtectedShell({
+  children,
+  ctaLabel,
+  onCta,
+}: {
+  children: React.ReactNode;
+  ctaLabel?: string;
+  onCta?: () => void;
+}) {
   return (
     <ProtectedRoute>
-      <AppShell ctaLabel={ctaLabel}>{children}</AppShell>
+      <AppShell ctaLabel={ctaLabel} onCta={onCta}>
+        {children}
+      </AppShell>
     </ProtectedRoute>
+  );
+}
+
+function CadastrosRoute() {
+  const [createRequest, setCreateRequest] = useState(0);
+  return (
+    <ProtectedShell ctaLabel="+ Nova categoria" onCta={() => setCreateRequest((value) => value + 1)}>
+      <Cadastros createRequest={createRequest} />
+    </ProtectedShell>
   );
 }
 
@@ -25,22 +46,7 @@ export default function App() {
           </ProtectedShell>
         }
       />
-      <Route
-        path="/cadastros"
-        element={
-          <ProtectedShell ctaLabel="+ Novo cadastro">
-            <PlaceholderPage
-              title="Cadastros"
-              description="Cadastre colaboradores, setores, categorias de equipamentos e fornecedores."
-              features={[
-                { title: 'Colaboradores', text: 'Base de destinatários das alocações e TREs.' },
-                { title: 'Categorias', text: 'Notebooks, celulares, monitores e demais famílias.' },
-                { title: 'Fornecedores', text: 'Vínculo das notas fiscais de entrada.' },
-              ]}
-            />
-          </ProtectedShell>
-        }
-      />
+      <Route path="/cadastros" element={<CadastrosRoute />} />
       <Route
         path="/configuracoes"
         element={
