@@ -10,11 +10,11 @@ type FormState = {
 
 const emptyForm: FormState = { nome: '', descricao: '', ativo: true };
 
-type CadastrosProps = {
+type CategoriasProps = {
   createRequest?: number;
 };
 
-export function Cadastros({ createRequest = 0 }: CadastrosProps) {
+export function Categorias({ createRequest = 0 }: CategoriasProps) {
   const formId = useId();
   const nomeRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<Categoria[]>([]);

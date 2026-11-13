@@ -77,18 +77,13 @@ cp .env.example .env
 - `frontend/public/logo2.png` — marca reduzida
 - `frontend/public/favicon.png` — favicon
 
-## Cadastros · Categorias
+## Cadastros (submenus)
 
-CRUD disponível em `/cadastros` com seed inicial:
+- `/cadastros/categorias` — CRUD de categorias (seed: Notebook, Monitor, Periféricos, Rede, Desktop, Servidor)
+- `/cadastros/colaboradores` — CRUD (Nome, E-mail pessoal, CPF, Data nascimento, Celular)
+- `/cadastros/fornecedores` — CRUD (Razão social, Nome fantasia, CNPJ/CPF)
 
-1. Notebook  
-2. Monitor  
-3. Periféricos  
-4. Rede  
-5. Desktop  
-6. Servidor  
-
-API: `GET/POST /api/categorias`, `PUT/DELETE /api/categorias/{id}`  
+APIs: `/api/categorias`, `/api/colaboradores`, `/api/fornecedores`  
 Persistência local SQLite em `backend/data/alocacao.db`.
 
 ## Próximos passos

@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import {
   IconAlloc,
@@ -10,9 +11,15 @@ import {
   IconTRE,
 } from './icons';
 
+const cadastroChildren = [
+  { to: '/cadastros/categorias', label: 'Categorias' },
+  { to: '/cadastros/colaboradores', label: 'Colaboradores' },
+  { to: '/cadastros/fornecedores', label: 'Fornecedores' },
+] as const;
+
 const items = [
   { to: '/', label: 'Dashboard', icon: IconDashboard, end: true },
-  { to: '/cadastros', label: 'Cadastros', icon: IconCadastros },
+  { label: 'Cadastros', icon: IconCadastros, children: cadastroChildren },
   { to: '/configuracoes', label: 'Configurações', icon: IconConfig },
   { to: '/notas-fiscais', label: 'Notas Fiscais', icon: IconInvoice },
   { to: '/tres', label: 'TREs', icon: IconTRE },
@@ -27,6 +34,13 @@ type SidebarProps = {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const auth = useAuth();
+  const location = useLocation();
+  const cadastrosActive = location.pathname.startsWith('/cadastros');
+  const [cadastrosOpen, setCadastrosOpen] = useState(cadastrosActive);
+
+  useEffect(() => {
+    if (cadastrosActive) setCadastrosOpen(true);
+  }, [cadastrosActive]);
 
   return (
     <aside id="sidebar" className={`sidebar${open ? ' open' : ''}`} aria-label="Navegação principal">
@@ -37,6 +51,40 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       <ul className="nav-list">
         {items.map((item) => {
           const Icon = item.icon;
+          if ('children' in item) {
+            return (
+              <li key={item.label} className="nav-group">
+                <button
+                  type="button"
+                  className={`nav-item nav-parent${cadastrosActive ? ' active' : ''}`}
+                  aria-expanded={cadastrosOpen}
+                  onClick={() => setCadastrosOpen((value) => !value)}
+                >
+                  <Icon />
+                  <span>{item.label}</span>
+                  <span className={`nav-chevron${cadastrosOpen ? ' open' : ''}`} aria-hidden>
+                    ▾
+                  </span>
+                </button>
+                {cadastrosOpen && (
+                  <ul className="nav-sublist">
+                    {item.children.map((child) => (
+                      <li key={child.to}>
+                        <NavLink
+                          to={child.to}
+                          className={({ isActive }) => `nav-item nav-subitem${isActive ? ' active' : ''}`}
+                          onClick={onClose}
+                        >
+                          <span>{child.label}</span>
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            );
+          }
+
           return (
             <li key={item.to}>
               <NavLink

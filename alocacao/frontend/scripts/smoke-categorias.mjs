@@ -15,7 +15,8 @@ if (await localLogin.isVisible().catch(() => false)) {
   await page.waitForURL('**/');
 }
 
-await page.getByRole('link', { name: 'Cadastros' }).click();
+await page.getByRole('button', { name: 'Cadastros' }).click().catch(() => undefined);
+await page.getByRole('link', { name: 'Categorias' }).click();
 await page.getByRole('heading', { name: 'Categorias', exact: true }).waitFor();
 await page.waitForTimeout(500);
 

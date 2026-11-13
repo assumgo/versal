@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { AppShell } from './components/AppShell';
-import { Cadastros } from './pages/Cadastros';
+import { Categorias } from './pages/Categorias';
+import { Colaboradores } from './pages/Colaboradores';
 import { Dashboard } from './pages/Dashboard';
+import { Fornecedores } from './pages/Fornecedores';
 import { Login } from './pages/Login';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 
@@ -25,11 +27,17 @@ function ProtectedShell({
   );
 }
 
-function CadastrosRoute() {
+function CrudRoute({
+  ctaLabel,
+  children,
+}: {
+  ctaLabel: string;
+  children: (createRequest: number) => React.ReactNode;
+}) {
   const [createRequest, setCreateRequest] = useState(0);
   return (
-    <ProtectedShell ctaLabel="+ Nova categoria" onCta={() => setCreateRequest((value) => value + 1)}>
-      <Cadastros createRequest={createRequest} />
+    <ProtectedShell ctaLabel={ctaLabel} onCta={() => setCreateRequest((value) => value + 1)}>
+      {children(createRequest)}
     </ProtectedShell>
   );
 }
@@ -46,7 +54,31 @@ export default function App() {
           </ProtectedShell>
         }
       />
-      <Route path="/cadastros" element={<CadastrosRoute />} />
+      <Route path="/cadastros" element={<Navigate to="/cadastros/categorias" replace />} />
+      <Route
+        path="/cadastros/categorias"
+        element={
+          <CrudRoute ctaLabel="+ Nova categoria">
+            {(createRequest) => <Categorias createRequest={createRequest} />}
+          </CrudRoute>
+        }
+      />
+      <Route
+        path="/cadastros/colaboradores"
+        element={
+          <CrudRoute ctaLabel="+ Novo colaborador">
+            {(createRequest) => <Colaboradores createRequest={createRequest} />}
+          </CrudRoute>
+        }
+      />
+      <Route
+        path="/cadastros/fornecedores"
+        element={
+          <CrudRoute ctaLabel="+ Novo fornecedor">
+            {(createRequest) => <Fornecedores createRequest={createRequest} />}
+          </CrudRoute>
+        }
+      />
       <Route
         path="/configuracoes"
         element={

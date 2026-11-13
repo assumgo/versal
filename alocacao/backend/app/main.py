@@ -7,8 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.db.seed import seed_categorias
 from app.db.session import Base, SessionLocal, engine
-from app.models import Categoria  # noqa: F401
-from app.routers import categorias
+from app.models import Categoria, Colaborador, Fornecedor  # noqa: F401
+from app.routers import categorias, colaboradores, fornecedores
 
 settings = get_settings()
 
@@ -36,6 +36,8 @@ app.add_middleware(
     allow_headers=['*'],
 )
 app.include_router(categorias.router, prefix=settings.api_prefix)
+app.include_router(colaboradores.router, prefix=settings.api_prefix)
+app.include_router(fornecedores.router, prefix=settings.api_prefix)
 
 
 @app.get('/health')

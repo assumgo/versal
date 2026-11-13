@@ -26,7 +26,12 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const data = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
-    const detail = typeof data?.detail === 'string' ? data.detail : `Erro HTTP ${response.status}`;
+    let detail = `Erro HTTP ${response.status}`;
+    if (typeof data?.detail === 'string') {
+      detail = data.detail;
+    } else if (Array.isArray(data?.detail) && data.detail[0]?.msg) {
+      detail = data.detail.map((item: { msg?: string }) => item.msg).filter(Boolean).join('; ');
+    }
     throw new ApiError(detail, response.status);
   }
 
