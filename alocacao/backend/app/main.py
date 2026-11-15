@@ -1,13 +1,15 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.migrate import ensure_schema
 from app.db.seed import seed_categorias
-from app.db.session import SessionLocal, engine
+from app.db.session import SessionLocal, engine, get_db
+from app.repositories import dashboard as dashboard_repo
 from app.models import (  # noqa: F401
     Alocacao,
     Categoria,
@@ -92,11 +94,6 @@ def meta() -> dict[str, object]:
 
 
 @app.get(f'{settings.api_prefix}/dashboard/summary')
-def dashboard_summary() -> dict[str, object]:
-    """Resumo inicial do estoque (dados mock até persistência completa)."""
-    return {
-        'disponiveis': 48,
-        'alocados': 23,
-        'em_manutencao': 4,
-        'aguardando_tre': 6,
-    }
+def dashboard_summary(db: Session = Depends(get_db)) -> dict[str, object]:
+    """Saldos de estoque e resumo por categoria a partir dos equipamentos cadastrados."""
+    return dashboard_repo.build_dashboard_summary(db)

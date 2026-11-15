@@ -69,7 +69,7 @@ cp .env.example .env
 
 - Health: `GET /health`
 - Meta: `GET /api/meta`
-- Resumo: `GET /api/dashboard/summary`
+- Resumo: `GET /api/dashboard/summary` (saldos disponíveis/alocados/manutenção/total + por categoria)
 
 ## Logos
 
@@ -105,12 +105,14 @@ cp .env.example .env
 
 ### Alocações
 
-- Página `/alocacoes` com form iniciando por Tipo (Entrega/Devolução) e Destino (Colaborador/Local)
+- Página `/alocacoes` com form iniciando por Tipo (Entrega/Devolução) e Destino (Colaborador/Local/Manutenção)
 - Campos: Código automático, Equipamento, Quantidade, Local ou Colaborador, Data de previsão (colaborador), Data de criação
 - Colaborador: gera TRE de entrega ou devolução automaticamente (data do PDF = previsão de entrega)
 - Local: apenas registra o movimento e atualiza o estoque disponível do produto
+- Manutenção: saída sem TRE; entra no saldo em manutenção do dashboard
 - Movimentação permitida somente para equipamentos (produto com vínculo a equipamento)
 - Grade com pesquisa e Ver todos
+- Dashboard: saldos Disponíveis / Alocados / Manutenção / Total (disp.+aloc.) e resumo por categorias
 
 APIs: `/api/categorias`, `/api/produtos`, `/api/colaboradores`, `/api/fornecedores`, `/api/locais`, `/api/equipamentos`, `/api/alocacoes`, `/api/tres`  
 Persistência local SQLite em `backend/data/alocacao.db`.

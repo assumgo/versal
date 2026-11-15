@@ -8,7 +8,7 @@ type AppShellProps = {
   onCta?: () => void;
 };
 
-export function AppShell({ children, ctaLabel = '+ Nova alocação', onCta }: AppShellProps) {
+export function AppShell({ children, ctaLabel, onCta }: AppShellProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const shell = useRef<HTMLDivElement>(null);

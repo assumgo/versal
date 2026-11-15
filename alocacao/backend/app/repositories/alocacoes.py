@@ -126,7 +126,7 @@ def criar_movimento(db: Session, payload: AlocacaoCreate) -> tuple[Alocacao, obj
             raise ValueError('Colaborador inválido')
         if not colaborador.ativo:
             raise ValueError('Colaborador inativo')
-    else:
+    elif payload.destino_tipo == 'local':
         local = db.get(Local, payload.local_id)
         if not local:
             raise ValueError('Local inválido')

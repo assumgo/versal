@@ -6,7 +6,7 @@ type TopBarProps = {
   onOpenMenu: () => void;
   search: string;
   onSearch: (value: string) => void;
-  ctaLabel: string;
+  ctaLabel?: string;
   onCta?: () => void;
 };
 
@@ -43,9 +43,11 @@ export function TopBar({
 
       <div className="topbar-actions">
         <ThemeToggle />
-        <button type="button" className="btn btn-primary" onClick={onCta}>
-          {ctaLabel}
-        </button>
+        {ctaLabel ? (
+          <button type="button" className="btn btn-primary" onClick={onCta}>
+            {ctaLabel}
+          </button>
+        ) : null}
       </div>
     </header>
   );

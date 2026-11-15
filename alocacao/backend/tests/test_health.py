@@ -22,4 +22,10 @@ def test_meta_modules() -> None:
 def test_dashboard_summary() -> None:
     response = client.get('/api/dashboard/summary')
     assert response.status_code == 200
-    assert 'disponiveis' in response.json()
+    body = response.json()
+    assert 'disponiveis' in body
+    assert 'alocados' in body
+    assert 'em_manutencao' in body
+    assert 'total_recursos' in body
+    assert body['total_recursos'] == body['disponiveis'] + body['alocados']
+    assert isinstance(body.get('categorias'), list)

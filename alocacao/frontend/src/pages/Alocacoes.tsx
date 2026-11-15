@@ -162,7 +162,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
         <span className="eyebrow">Operações</span>
         <h1>Alocações</h1>
         <p>
-          Movimente o estoque de equipamentos para colaborador (com TRE) ou local (somente registro). Só é possível
+          Movimente o estoque de equipamentos para colaborador (com TRE), local ou manutenção. Só é possível
           movimentar produtos vinculados a equipamentos.
         </p>
       </header>
@@ -214,6 +214,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
               >
                 <option value="colaborador">Colaborador</option>
                 <option value="local">Local</option>
+                <option value="manutencao">Manutenção</option>
               </select>
             </div>
           </div>
@@ -259,7 +260,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
             </div>
           </div>
 
-          {destinoTipo === 'colaborador' ? (
+          {destinoTipo === 'colaborador' && (
             <div className="field">
               <label htmlFor={`${formId}-colaborador`}>Colaborador</label>
               <select
@@ -276,7 +277,8 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
                 ))}
               </select>
             </div>
-          ) : (
+          )}
+          {destinoTipo === 'local' && (
             <div className="field">
               <label htmlFor={`${formId}-local`}>Local</label>
               <select
@@ -326,6 +328,9 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
           )}
           {destinoTipo === 'local' && (
             <p className="muted">Destino local apenas registra o movimento e atualiza o estoque disponível.</p>
+          )}
+          {destinoTipo === 'manutencao' && (
+            <p className="muted">Saída para manutenção reduz o saldo disponível e entra no saldo em manutenção.</p>
           )}
 
           <button type="submit" className="btn btn-primary" disabled={saving || equipamentos.length === 0}>

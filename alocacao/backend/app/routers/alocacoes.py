@@ -17,8 +17,10 @@ def _to_out(db: Session, alocacao) -> AlocacaoOut:
     destino_nome = ''
     if alocacao.destino_tipo == 'colaborador':
         destino_nome = colaborador.nome if colaborador else ''
-    else:
+    elif alocacao.destino_tipo == 'local':
         destino_nome = local.nome if local else ''
+    else:
+        destino_nome = 'Manutenção'
     tre_codigo = ''
     if alocacao.tre_id:
         from app.repositories import tres as tres_repo

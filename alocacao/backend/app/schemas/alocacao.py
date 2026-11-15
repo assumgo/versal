@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 AlocacaoTipo = Literal['entrega', 'devolucao']
-DestinoTipo = Literal['colaborador', 'local']
+DestinoTipo = Literal['colaborador', 'local', 'manutencao']
 
 
 class AlocacaoCreate(BaseModel):
@@ -25,11 +25,14 @@ class AlocacaoCreate(BaseModel):
                 raise ValueError('Não informe local para destino colaborador')
             if self.tipo == 'entrega' and not self.data_previsao:
                 raise ValueError('Informe a data de previsão de entrega')
-        else:
+        elif self.destino_tipo == 'local':
             if not self.local_id:
                 raise ValueError('Informe o local')
             if self.colaborador_id:
                 raise ValueError('Não informe colaborador para destino local')
+        else:
+            if self.colaborador_id or self.local_id:
+                raise ValueError('Saída para manutenção não usa colaborador nem local')
         return self
 
 

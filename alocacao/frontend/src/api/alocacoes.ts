@@ -1,7 +1,7 @@
 import { api } from './client';
 
 export type AlocacaoTipo = 'entrega' | 'devolucao';
-export type DestinoTipo = 'colaborador' | 'local';
+export type DestinoTipo = 'colaborador' | 'local' | 'manutencao';
 
 export type Alocacao = {
   id: number;
