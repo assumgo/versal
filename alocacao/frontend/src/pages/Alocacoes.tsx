@@ -38,6 +38,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
   const [quantidade, setQuantidade] = useState('1');
   const [colaboradorId, setColaboradorId] = useState('');
   const [localId, setLocalId] = useState('');
+  const [dataPrevisao, setDataPrevisao] = useState('');
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -86,6 +87,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
     setQuantidade('1');
     setColaboradorId('');
     setLocalId('');
+    setDataPrevisao(new Date().toISOString().slice(0, 10));
     setNotice('');
     setError('');
     void loadEquipamentos('entrega');
@@ -116,6 +118,10 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
       setError('Selecione um local');
       return;
     }
+    if (destinoTipo === 'colaborador' && tipo === 'entrega' && !dataPrevisao) {
+      setError('Informe a data de previsão de entrega');
+      return;
+    }
     const qty = Number(quantidade);
     if (!Number.isFinite(qty) || qty < 1) {
       setError('Quantidade inválida');
@@ -133,6 +139,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
         quantidade: qty,
         colaborador_id: destinoTipo === 'colaborador' ? Number(colaboradorId) : null,
         local_id: destinoTipo === 'local' ? Number(localId) : null,
+        data_previsao: destinoTipo === 'colaborador' ? dataPrevisao || null : null,
       });
       const treMsg = created.tre_codigo
         ? ` TRE ${created.tipo === 'entrega' ? 'de entrega' : 'de devolução'} ${created.tre_codigo} gerado.`
@@ -285,6 +292,19 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {destinoTipo === 'colaborador' && (
+            <div className="field">
+              <label htmlFor={`${formId}-previsao`}>Data de previsão de entrega</label>
+              <input
+                id={`${formId}-previsao`}
+                type="date"
+                value={dataPrevisao}
+                onChange={(event) => setDataPrevisao(event.target.value)}
+                required={tipo === 'entrega'}
+              />
             </div>
           )}
 

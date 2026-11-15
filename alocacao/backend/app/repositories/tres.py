@@ -55,6 +55,7 @@ def create_tre_with_pdf(
     tipo: str,
     colaborador: Colaborador,
     itens: list[dict],
+    data_documento: date | datetime | None = None,
 ) -> Tre:
     codigo = generate_codigo(db)
     pdf_name = f'TRE-{codigo}-{tipo}.pdf'
@@ -69,7 +70,6 @@ def create_tre_with_pdf(
     db.add(tre)
     db.flush()
 
-    item_rows: list[TreItem] = []
     item_data: list[TreItemData] = []
     for raw in itens:
         row = TreItem(
@@ -77,18 +77,21 @@ def create_tre_with_pdf(
             equipamento_id=raw.get('equipamento_id'),
             alocacao_id=raw.get('alocacao_id'),
             quantidade=raw.get('quantidade', 1),
-            categoria_nome=raw['categoria_nome'],
+            categoria_nome=raw.get('categoria_nome', ''),
             descricao=raw['descricao'],
+            marca=raw.get('marca', ''),
+            modelo=raw.get('modelo', ''),
             numero_patrimonio=raw['numero_patrimonio'],
         )
         db.add(row)
-        item_rows.append(row)
         item_data.append(
             TreItemData(
-                categoria_nome=row.categoria_nome,
                 descricao=row.descricao,
+                marca=row.marca,
+                modelo=row.modelo,
                 numero_patrimonio=row.numero_patrimonio,
                 quantidade=row.quantidade,
+                categoria_nome=row.categoria_nome,
             )
         )
 
@@ -101,6 +104,7 @@ def create_tre_with_pdf(
         itens=item_data,
         created_at=datetime.now().astimezone(),
         output_path=pdf_path,
+        data_documento=data_documento,
     )
     db.commit()
     return get_tre(db, tre.id)  # type: ignore[return-value]

@@ -8,5 +8,6 @@ httpx==0.28.1
 PyJWT[crypto]==2.10.1
 SQLAlchemy==2.0.40
 pymupdf==2.1.0
+openpyxl==3.1.5
 pytest==8.3.5
 pytest-asyncio==0.26.0

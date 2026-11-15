@@ -96,11 +96,12 @@ def estoque_disponivel_produto(db: Session, produto_id: int) -> int:
 def _item_snapshot(equipamento: Equipamento, quantidade: int) -> dict:
     produto = equipamento.produto
     categoria = produto.categoria if produto else None
-    descricao_parts = [p for p in [produto.marca if produto else '', produto.modelo if produto else ''] if p]
     return {
         'equipamento_id': equipamento.id,
-        'categoria_nome': categoria.nome if categoria else (produto.descricao if produto else 'Equipamento'),
-        'descricao': ' '.join(descricao_parts) or (produto.descricao if produto else ''),
+        'categoria_nome': categoria.nome if categoria else '',
+        'descricao': produto.descricao if produto else 'Equipamento',
+        'marca': produto.marca if produto else '',
+        'modelo': produto.modelo if produto else '',
         'numero_patrimonio': equipamento.numero_patrimonio,
         'quantidade': quantidade,
     }
@@ -168,6 +169,7 @@ def criar_movimento(db: Session, payload: AlocacaoCreate) -> tuple[Alocacao, obj
         colaborador_id=payload.colaborador_id,
         local_id=payload.local_id,
         referencia_id=referencia_id,
+        data_previsao=payload.data_previsao,
         ativa=ativa,
     )
     db.add(alocacao)
@@ -176,11 +178,15 @@ def criar_movimento(db: Session, payload: AlocacaoCreate) -> tuple[Alocacao, obj
     if payload.destino_tipo == 'colaborador' and colaborador:
         snap = _item_snapshot(equipamento, payload.quantidade)
         snap['alocacao_id'] = alocacao.id
+        data_doc = payload.data_previsao
+        if data_doc is None and ativa_atual is not None:
+            data_doc = ativa_atual.data_previsao
         tre = tres_repo.create_tre_with_pdf(
             db,
             tipo=payload.tipo,
             colaborador=colaborador,
             itens=[snap],
+            data_documento=data_doc,
         )
         alocacao.tre_id = tre.id
         db.add(alocacao)

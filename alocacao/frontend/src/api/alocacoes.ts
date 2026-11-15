@@ -23,6 +23,7 @@ export type Alocacao = {
   tre_id: number | null;
   tre_codigo: string;
   referencia_id: number | null;
+  data_previsao: string | null;
   ativa: boolean;
   estoque_disponivel_produto: number;
   created_at: string;
@@ -36,6 +37,7 @@ export type AlocacaoInput = {
   quantidade: number;
   colaborador_id?: number | null;
   local_id?: number | null;
+  data_previsao?: string | null;
 };
 
 export type AlocacaoFilters = {

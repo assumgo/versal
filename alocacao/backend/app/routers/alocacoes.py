@@ -45,6 +45,7 @@ def _to_out(db: Session, alocacao) -> AlocacaoOut:
         tre_id=alocacao.tre_id,
         tre_codigo=tre_codigo,
         referencia_id=alocacao.referencia_id,
+        data_previsao=alocacao.data_previsao,
         ativa=alocacao.ativa,
         estoque_disponivel_produto=repo.estoque_disponivel_produto(db, produto_id) if produto_id else 0,
         created_at=alocacao.created_at,

@@ -93,6 +93,7 @@ def test_alocacao_colaborador_gera_tre_e_local_nao(client: TestClient) -> None:
             'equipamento_id': equipamento_id,
             'quantidade': 1,
             'colaborador_id': colaborador_id,
+            'data_previsao': '2026-11-16',
         },
     )
     assert entrega.status_code == 201, entrega.text
@@ -100,6 +101,7 @@ def test_alocacao_colaborador_gera_tre_e_local_nao(client: TestClient) -> None:
     assert body['codigo'] == '000001'
     assert body['tipo'] == 'entrega'
     assert body['tre_codigo'] == '000001'
+    assert body['data_previsao'] == '2026-11-16'
     assert body['ativa'] is True
     assert body['estoque_disponivel_produto'] == 0
 
@@ -113,7 +115,16 @@ def test_alocacao_colaborador_gera_tre_e_local_nao(client: TestClient) -> None:
     import pymupdf
 
     generated = pymupdf.open(stream=pdf.content, filetype='pdf')
-    assert any('TRE Nº 000001' in page.get_text() for page in generated)
+    full_text = '\n'.join(page.get_text() for page in generated)
+    assert 'Ana Silva' in full_text
+    assert 'Entrega de Equipamentos' in full_text
+    assert 'Notebook TRE' in full_text or 'Dell' in full_text
+    assert '16 de novembro' in full_text
+    assert '529.982.247-25' in full_text
+    # número do TRE fica no rodapé, não no cabeçalho
+    header = generated[0].get_text()[:200]
+    assert 'TRE Nº' not in header
+    assert 'TRE Nº 000001' in generated[-1].get_text()
     generated.close()
 
     today = date.today().isoformat()
@@ -128,6 +139,7 @@ def test_alocacao_colaborador_gera_tre_e_local_nao(client: TestClient) -> None:
             'equipamento_id': equipamento_id,
             'quantidade': 1,
             'colaborador_id': colaborador_id,
+            'data_previsao': '2026-11-16',
         },
     )
     assert devolucao.status_code == 201, devolucao.text

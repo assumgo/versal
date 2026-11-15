@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -14,6 +14,7 @@ class AlocacaoCreate(BaseModel):
     quantidade: int = Field(default=1, ge=1)
     colaborador_id: int | None = None
     local_id: int | None = None
+    data_previsao: date | None = None
 
     @model_validator(mode='after')
     def validate_destino(self) -> 'AlocacaoCreate':
@@ -22,6 +23,8 @@ class AlocacaoCreate(BaseModel):
                 raise ValueError('Informe o colaborador')
             if self.local_id:
                 raise ValueError('Não informe local para destino colaborador')
+            if self.tipo == 'entrega' and not self.data_previsao:
+                raise ValueError('Informe a data de previsão de entrega')
         else:
             if not self.local_id:
                 raise ValueError('Informe o local')
@@ -52,6 +55,7 @@ class AlocacaoOut(BaseModel):
     tre_id: int | None
     tre_codigo: str
     referencia_id: int | None
+    data_previsao: date | None
     ativa: bool
     estoque_disponivel_produto: int
     created_at: datetime

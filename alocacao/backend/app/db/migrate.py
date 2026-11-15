@@ -11,6 +11,17 @@ from app.utils.codigos import NUMERIC_CODE
 PRODUTO_CODIGO_START = 1
 
 
+def _add_column_if_missing(engine: Engine, table: str, column: str, ddl: str) -> None:
+    inspector = inspect(engine)
+    if table not in inspector.get_table_names():
+        return
+    columns = {item['name'] for item in inspector.get_columns(table)}
+    if column in columns:
+        return
+    with engine.begin() as conn:
+        conn.execute(text(f'ALTER TABLE {table} ADD COLUMN {ddl}'))
+
+
 def ensure_schema(engine: Engine) -> None:
     inspector = inspect(engine)
     tables = set(inspector.get_table_names())
@@ -43,6 +54,10 @@ def ensure_schema(engine: Engine) -> None:
                 conn.execute(text('DROP TABLE IF EXISTS equipamentos'))
 
     Base.metadata.create_all(bind=engine)
+
+    _add_column_if_missing(engine, 'alocacoes', 'data_previsao', 'data_previsao DATE')
+    _add_column_if_missing(engine, 'tre_itens', 'marca', "marca VARCHAR(100) NOT NULL DEFAULT ''")
+    _add_column_if_missing(engine, 'tre_itens', 'modelo', "modelo VARCHAR(100) NOT NULL DEFAULT ''")
 
     with Session(engine) as session:
         produtos = list(session.scalars(select(Produto).order_by(Produto.id.asc())).all())

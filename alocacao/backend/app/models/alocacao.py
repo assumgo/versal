@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -25,6 +25,7 @@ class Alocacao(Base):
     local_id: Mapped[int | None] = mapped_column(ForeignKey('locais.id'), nullable=True, index=True)
     tre_id: Mapped[int | None] = mapped_column(ForeignKey('tres.id'), nullable=True, index=True)
     referencia_id: Mapped[int | None] = mapped_column(ForeignKey('alocacoes.id'), nullable=True, index=True)
+    data_previsao: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
     ativa: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at: Mapped[datetime] = mapped_column(

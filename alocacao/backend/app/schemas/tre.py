@@ -14,6 +14,8 @@ class TreItemOut(BaseModel):
     quantidade: int
     categoria_nome: str
     descricao: str
+    marca: str = ''
+    modelo: str = ''
     numero_patrimonio: str
 
 

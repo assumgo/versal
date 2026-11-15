@@ -31,8 +31,10 @@ class TreItem(Base):
     equipamento_id: Mapped[int | None] = mapped_column(ForeignKey('equipamentos.id'), nullable=True, index=True)
     alocacao_id: Mapped[int | None] = mapped_column(ForeignKey('alocacoes.id'), nullable=True, index=True)
     quantidade: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    categoria_nome: Mapped[str] = mapped_column(String(120), nullable=False)
+    categoria_nome: Mapped[str] = mapped_column(String(120), nullable=False, default='')
     descricao: Mapped[str] = mapped_column(String(300), nullable=False)
+    marca: Mapped[str] = mapped_column(String(100), nullable=False, default='')
+    modelo: Mapped[str] = mapped_column(String(100), nullable=False, default='')
     numero_patrimonio: Mapped[str] = mapped_column(String(100), nullable=False)
 
     tre = relationship('Tre', back_populates='itens')

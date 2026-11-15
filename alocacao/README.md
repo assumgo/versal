@@ -99,14 +99,15 @@ cp .env.example .env
 - Página `/tres` com pesquisa por nome do colaborador, código e intervalo de data de emissão
 - Grade: Código, Colaborador, Data criação, Tipo (Entrega/Devolução) e download do PDF
 - Numeração sequencial única a partir de `000001`
-- Modelos oficiais em `backend/app/assets/tre/` (`TRE-Entrega.pdf`, `TRE-Devolucao.pdf`)
-- PDFs gerados em `backend/data/tres/`
+- Modelo oficial Excel em `backend/app/assets/tre/TRE-Modelo.xlsx` (guias Entrega e Devolução)
+- PDFs gerados via LibreOffice a partir do Excel preenchido em `backend/data/tres/`
+- Rodapé com número do TRE (sem número no cabeçalho)
 
 ### Alocações
 
 - Página `/alocacoes` com form iniciando por Tipo (Entrega/Devolução) e Destino (Colaborador/Local)
-- Campos: Código automático, Equipamento, Quantidade, Local ou Colaborador, Data de criação
-- Colaborador: gera TRE de entrega ou devolução automaticamente
+- Campos: Código automático, Equipamento, Quantidade, Local ou Colaborador, Data de previsão (colaborador), Data de criação
+- Colaborador: gera TRE de entrega ou devolução automaticamente (data do PDF = previsão de entrega)
 - Local: apenas registra o movimento e atualiza o estoque disponível do produto
 - Movimentação permitida somente para equipamentos (produto com vínculo a equipamento)
 - Grade com pesquisa e Ver todos

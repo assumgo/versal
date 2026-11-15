@@ -27,6 +27,8 @@ def _to_out(tre) -> TreOut:
                 quantidade=item.quantidade,
                 categoria_nome=item.categoria_nome,
                 descricao=item.descricao,
+                marca=getattr(item, 'marca', '') or '',
+                modelo=getattr(item, 'modelo', '') or '',
                 numero_patrimonio=item.numero_patrimonio,
             )
             for item in (tre.itens or [])
