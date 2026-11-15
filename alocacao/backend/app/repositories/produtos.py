@@ -1,13 +1,11 @@
-import re
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.produto import Produto
 from app.schemas.produto import ProdutoCreate, ProdutoUpdate
+from app.utils.codigos import next_numeric_codigo
 
-CODIGO_PREFIX = 'PRD-'
-CODIGO_PATTERN = re.compile(r'^PRD-(\d+)$')
+PRODUTO_CODIGO_START = 1
 
 
 def list_produtos(db: Session) -> list[Produto]:
@@ -29,19 +27,9 @@ def get_by_codigo(db: Session, codigo: str) -> Produto | None:
 
 
 def generate_codigo(db: Session) -> str:
-    """Gera próximo código único no formato PRD-000001."""
-    codes = db.scalars(select(Produto.codigo)).all()
-    max_n = 0
-    for code in codes:
-        match = CODIGO_PATTERN.match(code or '')
-        if match:
-            max_n = max(max_n, int(match.group(1)))
-    next_n = max_n + 1
-    while True:
-        candidate = f'{CODIGO_PREFIX}{next_n:06d}'
-        if not get_by_codigo(db, candidate):
-            return candidate
-        next_n += 1
+    """Gera próximo código único numérico a partir de 000001."""
+    codes = list(db.scalars(select(Produto.codigo)).all())
+    return next_numeric_codigo(codes, start=PRODUTO_CODIGO_START)
 
 
 def create_produto(db: Session, payload: ProdutoCreate) -> Produto:

@@ -10,6 +10,7 @@ class Equipamento(Base):
     __tablename__ = 'equipamentos'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    codigo: Mapped[str] = mapped_column(String(60), unique=True, nullable=False, index=True)
     produto_id: Mapped[int] = mapped_column(ForeignKey('produtos.id'), nullable=False, index=True)
     numero_serie: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     numero_patrimonio: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)

@@ -19,6 +19,7 @@ def _to_out(db: Session, equipamento) -> EquipamentoOut:
     categoria = produto.categoria if produto else None
     return EquipamentoOut(
         id=equipamento.id,
+        codigo=equipamento.codigo,
         produto_id=equipamento.produto_id,
         numero_serie=equipamento.numero_serie,
         numero_patrimonio=equipamento.numero_patrimonio,

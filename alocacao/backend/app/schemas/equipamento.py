@@ -62,6 +62,7 @@ class EquipamentoOut(EquipamentoBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    codigo: str
     status: StatusEquipamento
     produto_codigo: str
     produto_descricao: str

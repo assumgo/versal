@@ -80,7 +80,7 @@ cp .env.example .env
 ## Cadastros (submenus)
 
 - `/cadastros/categorias` — CRUD de categorias (seed: Notebook, Monitor, Periféricos, Rede, Desktop, Servidor)
-- `/cadastros/produtos` — CRUD (Código gerado automaticamente/único, Descrição, Marca, Modelo, Categoria)
+- `/cadastros/produtos` — CRUD (Código numérico sequencial automático a partir de `000001`, Descrição, Marca, Modelo, Categoria)
 - `/cadastros/colaboradores` — CRUD (Nome, E-mail pessoal, CPF, Data nascimento, Celular)
 - `/cadastros/fornecedores` — CRUD (Razão social, Nome fantasia, CNPJ/CPF)
 
@@ -89,8 +89,8 @@ cp .env.example .env
 - Página `/equipamentos` com grade inicialmente vazia
 - Filtros: Categoria (Todas + cadastradas) e Status (Disponível / Alocado)
 - Botão **Pesquisar** aplica os filtros
-- CRUD: novo/editar/excluir (ID somente leitura na edição)
-- Campos do equipamento: Produto, Nº série, Nº patrimônio (único), MAC (opcional)
+- CRUD: novo/editar/excluir (Código gerado automaticamente, somente leitura)
+- Campos do equipamento: Código (a partir de `100000`), Produto, Nº série, Nº patrimônio (único), MAC (opcional)
 - Status **Alocado** quando houver alocação ativa vinculada; caso contrário **Disponível**
 
 APIs: `/api/categorias`, `/api/produtos`, `/api/colaboradores`, `/api/fornecedores`, `/api/equipamentos`  

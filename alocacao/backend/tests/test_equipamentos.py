@@ -54,7 +54,7 @@ def test_equipamento_crud_and_status_filters(client) -> None:
     assert produto.status_code == 201, produto.text
     produto_body = produto.json()
     produto_id = produto_body['id']
-    assert produto_body['codigo'].startswith('PRD-')
+    assert produto_body['codigo'] == '000001'
 
     created = test_client.post(
         '/api/equipamentos',
@@ -67,10 +67,24 @@ def test_equipamento_crud_and_status_filters(client) -> None:
     )
     assert created.status_code == 201, created.text
     equipamento = created.json()
+    assert equipamento['codigo'] == '100000'
     assert equipamento['status'] == 'disponivel'
-    assert equipamento['produto_codigo'] == produto_body['codigo']
+    assert equipamento['produto_codigo'] == '000001'
     assert equipamento['categoria_nome'] == 'Notebook'
     assert 'descricao' not in equipamento or equipamento.get('produto_descricao') == 'Notebook corporativo'
+
+    segundo = test_client.post(
+        '/api/equipamentos',
+        json={
+            'produto_id': produto_id,
+            'numero_serie': 'SN-002',
+            'numero_patrimonio': 'PAT-002',
+        },
+    )
+    assert segundo.status_code == 201, segundo.text
+    assert segundo.json()['codigo'] == '100001'
+    assert test_client.delete(f"/api/equipamentos/{segundo.json()['id']}").status_code == 204
+
 
     conflict = test_client.post(
         '/api/equipamentos',

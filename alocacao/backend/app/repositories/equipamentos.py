@@ -5,6 +5,9 @@ from app.models.alocacao import Alocacao
 from app.models.equipamento import Equipamento
 from app.models.produto import Produto
 from app.schemas.equipamento import EquipamentoCreate, EquipamentoUpdate, StatusEquipamento
+from app.utils.codigos import next_numeric_codigo
+
+EQUIPAMENTO_CODIGO_START = 100000
 
 
 def _ativo_alocado_exists():
@@ -33,7 +36,7 @@ def list_equipamentos(
     query = (
         select(Equipamento)
         .options(joinedload(Equipamento.produto).joinedload(Produto.categoria))
-        .order_by(Equipamento.id.asc())
+        .order_by(Equipamento.codigo.asc())
     )
     if categoria_id is not None:
         query = query.join(Equipamento.produto).where(Produto.categoria_id == categoria_id)
@@ -52,14 +55,25 @@ def get_equipamento(db: Session, equipamento_id: int) -> Equipamento | None:
     ).unique().first()
 
 
+def get_by_codigo(db: Session, codigo: str) -> Equipamento | None:
+    return db.scalars(select(Equipamento).where(Equipamento.codigo == codigo.strip())).first()
+
+
 def get_by_patrimonio(db: Session, numero_patrimonio: str) -> Equipamento | None:
     return db.scalars(
         select(Equipamento).where(Equipamento.numero_patrimonio == numero_patrimonio.strip())
     ).first()
 
 
+def generate_codigo(db: Session) -> str:
+    """Gera próximo código único numérico a partir de 100000."""
+    codes = list(db.scalars(select(Equipamento.codigo)).all())
+    return next_numeric_codigo(codes, start=EQUIPAMENTO_CODIGO_START)
+
+
 def create_equipamento(db: Session, payload: EquipamentoCreate) -> Equipamento:
     equipamento = Equipamento(
+        codigo=generate_codigo(db),
         produto_id=payload.produto_id,
         numero_serie=payload.numero_serie,
         numero_patrimonio=payload.numero_patrimonio,
@@ -72,6 +86,8 @@ def create_equipamento(db: Session, payload: EquipamentoCreate) -> Equipamento:
 
 def update_equipamento(db: Session, equipamento: Equipamento, payload: EquipamentoUpdate) -> Equipamento:
     data = payload.model_dump(exclude_unset=True)
+    # Código é imutável após a criação.
+    data.pop('codigo', None)
     for key, value in data.items():
         setattr(equipamento, key, value)
     db.add(equipamento)

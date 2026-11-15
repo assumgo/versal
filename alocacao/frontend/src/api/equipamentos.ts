@@ -4,6 +4,7 @@ export type EquipamentoStatus = 'disponivel' | 'alocado';
 
 export type Equipamento = {
   id: number;
+  codigo: string;
   produto_id: number;
   numero_serie: string;
   numero_patrimonio: string;

@@ -51,7 +51,7 @@ def test_produto_codigo_automatico_e_unico(client: TestClient) -> None:
     )
     assert first.status_code == 201, first.text
     body = first.json()
-    assert body['codigo'].startswith('PRD-')
+    assert body['codigo'] == '000001'
     assert body['categoria_nome'] == 'Notebook'
 
     second = client.post(
@@ -64,17 +64,15 @@ def test_produto_codigo_automatico_e_unico(client: TestClient) -> None:
         },
     )
     assert second.status_code == 201, second.text
-    assert second.json()['codigo'] != body['codigo']
-    assert second.json()['codigo'].startswith('PRD-')
+    assert second.json()['codigo'] == '000002'
 
-    # Código não pode ser alterado via update mesmo se enviado.
     updated = client.put(
         f"/api/produtos/{body['id']}",
-        json={'descricao': 'Notebook atualizado', 'codigo': 'HACK-001'},
+        json={'descricao': 'Notebook atualizado', 'codigo': '999999'},
     )
     assert updated.status_code == 200
     assert updated.json()['descricao'] == 'Notebook atualizado'
-    assert updated.json()['codigo'] == body['codigo']
+    assert updated.json()['codigo'] == '000001'
 
     deleted = client.delete(f"/api/produtos/{body['id']}")
     assert deleted.status_code == 204

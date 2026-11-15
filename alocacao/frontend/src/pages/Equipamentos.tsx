@@ -9,6 +9,7 @@ import {
 import { produtosApi, type Produto } from '../api/produtos';
 
 type FormState = {
+  codigo: string;
   produto_id: string;
   numero_serie: string;
   numero_patrimonio: string;
@@ -16,6 +17,7 @@ type FormState = {
 };
 
 const emptyForm: FormState = {
+  codigo: '',
   produto_id: '',
   numero_serie: '',
   numero_patrimonio: '',
@@ -73,6 +75,7 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
   function openEdit(item: Equipamento) {
     setEditingId(item.id);
     setForm({
+      codigo: item.codigo,
       produto_id: String(item.produto_id),
       numero_serie: item.numero_serie,
       numero_patrimonio: item.numero_patrimonio,
@@ -146,7 +149,7 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
   }
 
   async function onDelete(item: Equipamento) {
-    if (!window.confirm(`Excluir o equipamento patrimônio "${item.numero_patrimonio}" (ID ${item.id})?`)) return;
+    if (!window.confirm(`Excluir o equipamento código "${item.codigo}" (patrimônio ${item.numero_patrimonio})?`)) return;
     setError('');
     setNotice('');
     try {
@@ -219,18 +222,21 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
       {formOpen && (
         <form className="card-panel cadastro-form equipamento-form" onSubmit={(event) => void onSubmit(event)}>
           <div className="form-heading">
-            <h2>{editingId ? `Editar equipamento #${editingId}` : 'Novo equipamento'}</h2>
+            <h2>{editingId ? `Editar equipamento ${form.codigo}` : 'Novo equipamento'}</h2>
             <button type="button" className="btn btn-ghost" onClick={closeForm}>
               Fechar
             </button>
           </div>
 
-          {editingId && (
-            <div className="field">
-              <label htmlFor={`${formId}-id`}>ID</label>
-              <input id={`${formId}-id`} value={editingId} disabled readOnly />
-            </div>
-          )}
+          <div className="field">
+            <label htmlFor={`${formId}-codigo`}>Código</label>
+            <input
+              id={`${formId}-codigo`}
+              value={editingId ? form.codigo : 'Gerado automaticamente'}
+              disabled
+              readOnly
+            />
+          </div>
 
           <div className="form-grid-2">
             <div className="field">
@@ -311,28 +317,30 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
         ) : (
           <div className="table-scroll">
             <table className="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Produto</th>
-                  <th>Marca</th>
-                  <th>Modelo</th>
-                  <th>Série</th>
-                  <th>Patrimônio</th>
-                  <th>MAC</th>
-                  <th>Categoria</th>
-                  <th>Status</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className={editingId === item.id ? 'row-selected' : undefined}>
-                    <td>{item.id}</td>
-                    <td>
-                      <strong>{item.produto_codigo}</strong>
-                      <div className="muted">{item.produto_descricao}</div>
-                    </td>
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Produto</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Série</th>
+                    <th>Patrimônio</th>
+                    <th>MAC</th>
+                    <th>Categoria</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.id} className={editingId === item.id ? 'row-selected' : undefined}>
+                      <td>
+                        <strong>{item.codigo}</strong>
+                      </td>
+                      <td>
+                        <strong>{item.produto_codigo}</strong>
+                        <div className="muted">{item.produto_descricao}</div>
+                      </td>
                     <td>{item.marca}</td>
                     <td>{item.modelo}</td>
                     <td>{item.numero_serie}</td>
