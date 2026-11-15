@@ -86,7 +86,9 @@ await alocForm.getByLabel('Colaborador').selectOption({ label: `Colab Aloc ${sta
 await alocForm.getByRole('button', { name: 'Registrar alocação' }).click();
 await page.getByText(/Alocação .* criada/).waitFor();
 await page.getByRole('button', { name: 'Ver todos' }).click();
-await page.getByText('Entrega').first().waitFor();
+await page.getByRole('cell', { name: '000001', exact: true }).waitFor();
+await page.locator('.status-pill', { hasText: 'Entrega' }).first().waitFor();
+await page.getByText('Carregando...').waitFor({ state: 'hidden' });
 await page.screenshot({ path: path.join(outDir, 'alocacoes-form-grid.png'), fullPage: true });
 
 console.log(JSON.stringify({ ok: true, equipamento: equipamento.codigo, colaborador: colaborador.nome }, null, 2));
