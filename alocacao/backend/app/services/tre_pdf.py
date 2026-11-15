@@ -69,6 +69,22 @@ def _insert(page: pymupdf.Page, point: tuple[float, float], text: str, fontsize:
     page.insert_text(point, text, fontsize=fontsize, fontname='helv', color=(0, 0, 0))
 
 
+def _write_footer(page: pymupdf.Page, codigo: str, page_index: int, page_count: int) -> None:
+    """Insere o número do TRE no rodapé de cada página."""
+    footer = f'TRE Nº {codigo}  ·  Página {page_index + 1}/{page_count}'
+    # Limpa eventual conteúdo residual na faixa do rodapé.
+    _whiteout(page, pymupdf.Rect(36, 762, 576, 786))
+    _apply(page)
+    page.insert_textbox(
+        pymupdf.Rect(36, 766, 576, 784),
+        footer,
+        fontsize=9,
+        fontname='helv',
+        color=(0.15, 0.15, 0.15),
+        align=pymupdf.TEXT_ALIGN_CENTER,
+    )
+
+
 def _write_items(page: pymupdf.Page, itens: list[TreItemData], start_y: float) -> None:
     y = start_y
     max_rows = 8
@@ -133,6 +149,9 @@ def generate_tre_pdf(
         _insert(page0, (390.4, 500), data_txt, fontsize=10)
         _insert(page0, (134.4, 586), colaborador_nome[:40], fontsize=10)
         _insert(page0, (134.4, 672), REPRESENTANTE, fontsize=10)
+
+    for index, page in enumerate(doc):
+        _write_footer(page, codigo, index, doc.page_count)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(output_path)

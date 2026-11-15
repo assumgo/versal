@@ -101,6 +101,11 @@ def test_alocacao_gera_tre_entrega_e_devolucao(client: TestClient) -> None:
     assert pdf.status_code == 200
     assert pdf.headers['content-type'].startswith('application/pdf')
     assert pdf.content[:4] == b'%PDF'
+    import pymupdf
+
+    generated = pymupdf.open(stream=pdf.content, filetype='pdf')
+    assert any('TRE Nº 000001' in page.get_text() for page in generated)
+    generated.close()
 
     today = date.today().isoformat()
     filtrado = client.get('/api/tres', params={'codigo': '000001', 'data_inicio': today, 'data_fim': today})
