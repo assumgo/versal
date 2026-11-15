@@ -134,22 +134,35 @@ def test_dashboard_summary_counts_by_status_and_category() -> None:
             )
             assert manut.status_code == 201, manut.text
 
+            # Manutenção também aceita equipamento já alocado (transferência)
+            manut_alocado = client.post(
+                '/api/alocacoes',
+                json={
+                    'tipo': 'entrega',
+                    'destino_tipo': 'manutencao',
+                    'equipamento_id': eq1.json()['id'],
+                    'quantidade': 1,
+                },
+            )
+            assert manut_alocado.status_code == 201, manut_alocado.text
+            assert manut_alocado.json()['referencia_id'] == entrega.json()['id']
+
             summary = client.get('/api/dashboard/summary')
             assert summary.status_code == 200
             data = summary.json()
             assert data['disponiveis'] == 1
-            assert data['alocados'] == 1
-            assert data['em_manutencao'] == 1
-            assert data['total_recursos'] == 2  # disponivel + alocado
+            assert data['alocados'] == 0
+            assert data['em_manutencao'] == 2
+            assert data['total_recursos'] == 1  # disponivel + alocado
 
             nomes = [item['nome'] for item in data['categorias']]
             assert nomes[:6] == ['Notebook', 'Monitor', 'Periféricos', 'Rede', 'Desktop', 'Servidor']
 
             by_name = {item['nome']: item for item in data['categorias']}
             assert by_name['Notebook']['disponiveis'] == 0
-            assert by_name['Notebook']['alocados'] == 1
-            assert by_name['Notebook']['em_manutencao'] == 1
-            assert by_name['Notebook']['total'] == 1
+            assert by_name['Notebook']['alocados'] == 0
+            assert by_name['Notebook']['em_manutencao'] == 2
+            assert by_name['Notebook']['total'] == 0
             assert by_name['Monitor']['disponiveis'] == 1
             assert by_name['Monitor']['alocados'] == 0
             assert by_name['Monitor']['total'] == 1

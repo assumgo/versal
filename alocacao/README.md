@@ -109,7 +109,7 @@ cp .env.example .env
 - Campos: Código automático, Equipamento, Quantidade, Local ou Colaborador, Data de previsão (colaborador), Data de criação
 - Colaborador: gera TRE de entrega ou devolução automaticamente (data do PDF = previsão de entrega)
 - Local: apenas registra o movimento e atualiza o estoque disponível do produto
-- Manutenção: saída sem TRE; entra no saldo em manutenção do dashboard
+- Manutenção: lista disponíveis e alocados; saída sem TRE (transfere se já alocado) e entra no saldo em manutenção
 - Movimentação permitida somente para equipamentos (produto com vínculo a equipamento)
 - Grade com pesquisa e Ver todos
 - Dashboard: saldos Disponíveis / Alocados / Manutenção / Total (disp.+aloc.) e resumo por categorias

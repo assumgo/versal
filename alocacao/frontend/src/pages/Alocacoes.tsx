@@ -51,7 +51,12 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
     setLocais(locs);
   }
 
-  async function loadEquipamentos(nextTipo: AlocacaoTipo) {
+  async function loadEquipamentos(nextTipo: AlocacaoTipo, nextDestino: DestinoTipo = destinoTipo) {
+    // Manutenção lista disponíveis e alocados; demais destinos seguem o tipo
+    if (nextDestino === 'manutencao') {
+      setEquipamentos(await equipamentosApi.list({}));
+      return;
+    }
     const status = nextTipo === 'entrega' ? 'disponivel' : 'alocado';
     setEquipamentos(await equipamentosApi.list({ status }));
   }
@@ -69,7 +74,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
   }
 
   useEffect(() => {
-    void Promise.all([loadAux(), loadAlocacoes(), loadEquipamentos('entrega')]).catch((err) =>
+    void Promise.all([loadAux(), loadAlocacoes(), loadEquipamentos('entrega', 'colaborador')]).catch((err) =>
       setError(err instanceof Error ? err.message : 'Falha ao carregar dados'),
     );
   }, []);
@@ -90,7 +95,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
     setDataPrevisao(new Date().toISOString().slice(0, 10));
     setNotice('');
     setError('');
-    void loadEquipamentos('entrega');
+    void loadEquipamentos('entrega', 'colaborador');
   }
 
   function closeForm() {
@@ -101,7 +106,15 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
   async function onChangeTipo(next: AlocacaoTipo) {
     setTipo(next);
     setEquipamentoId('');
-    await loadEquipamentos(next);
+    await loadEquipamentos(next, destinoTipo);
+  }
+
+  async function onChangeDestino(next: DestinoTipo) {
+    setDestinoTipo(next);
+    setColaboradorId('');
+    setLocalId('');
+    setEquipamentoId('');
+    await loadEquipamentos(tipo, next);
   }
 
   async function onSubmit(event: FormEvent) {
@@ -146,7 +159,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
         : ' Movimento registrado sem TRE.';
       setNotice(`Alocação ${created.codigo} criada.${treMsg}`);
       closeForm();
-      await Promise.all([loadAlocacoes(search || undefined), loadEquipamentos(tipo)]);
+      await Promise.all([loadAlocacoes(search || undefined), loadEquipamentos(tipo, destinoTipo)]);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível salvar a alocação');
     } finally {
@@ -205,11 +218,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
               <select
                 id={`${formId}-destino-tipo`}
                 value={destinoTipo}
-                onChange={(event) => {
-                  setDestinoTipo(event.target.value as DestinoTipo);
-                  setColaboradorId('');
-                  setLocalId('');
-                }}
+                onChange={(event) => void onChangeDestino(event.target.value as DestinoTipo)}
                 required
               >
                 <option value="colaborador">Colaborador</option>
@@ -236,13 +245,19 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
                 <option value="">Selecione</option>
                 {equipamentos.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.codigo} — {item.produto_codigo} {item.produto_descricao} (pat. {item.numero_patrimonio})
+                    {item.codigo} — {item.produto_codigo} {item.produto_descricao} (pat.{' '}
+                    {item.numero_patrimonio})
+                    {destinoTipo === 'manutencao'
+                      ? ` · ${item.status === 'disponivel' ? 'Disponível' : 'Alocado'}`
+                      : ''}
                   </option>
                 ))}
               </select>
               {equipamentos.length === 0 && (
                 <p className="muted">
-                  Nenhum equipamento {tipo === 'entrega' ? 'disponível' : 'alocado'} para movimentar.
+                  {destinoTipo === 'manutencao'
+                    ? 'Nenhum equipamento cadastrado para enviar à manutenção.'
+                    : `Nenhum equipamento ${tipo === 'entrega' ? 'disponível' : 'alocado'} para movimentar.`}
                 </p>
               )}
             </div>
@@ -330,7 +345,10 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
             <p className="muted">Destino local apenas registra o movimento e atualiza o estoque disponível.</p>
           )}
           {destinoTipo === 'manutencao' && (
-            <p className="muted">Saída para manutenção reduz o saldo disponível e entra no saldo em manutenção.</p>
+            <p className="muted">
+              Manutenção lista todos os equipamentos (disponíveis e alocados). Se já estiver alocado, a entrega
+              anterior é encerrada e o item passa para manutenção.
+            </p>
           )}
 
           <button type="submit" className="btn btn-primary" disabled={saving || equipamentos.length === 0}>

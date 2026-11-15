@@ -142,11 +142,23 @@ def criar_movimento(db: Session, payload: AlocacaoCreate) -> tuple[Alocacao, obj
     ativa = False
 
     if payload.tipo == 'entrega':
-        if ativa_atual:
-            raise ValueError(f'Equipamento {equipamento.codigo} já está alocado')
-        if disponivel < payload.quantidade:
-            raise ValueError('Estoque disponível insuficiente para o produto')
-        ativa = True
+        if payload.destino_tipo == 'manutencao':
+            # Manutenção aceita disponível ou já alocado (transferência)
+            if ativa_atual and ativa_atual.destino_tipo == 'manutencao':
+                raise ValueError(f'Equipamento {equipamento.codigo} já está em manutenção')
+            if ativa_atual:
+                ativa_atual.ativa = False
+                referencia_id = ativa_atual.id
+                db.add(ativa_atual)
+            elif disponivel < payload.quantidade:
+                raise ValueError('Estoque disponível insuficiente para o produto')
+            ativa = True
+        else:
+            if ativa_atual:
+                raise ValueError(f'Equipamento {equipamento.codigo} já está alocado')
+            if disponivel < payload.quantidade:
+                raise ValueError('Estoque disponível insuficiente para o produto')
+            ativa = True
     else:
         if not ativa_atual:
             raise ValueError(f'Equipamento {equipamento.codigo} não possui entrega ativa para devolução')
