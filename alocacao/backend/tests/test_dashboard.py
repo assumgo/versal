@@ -142,6 +142,9 @@ def test_dashboard_summary_counts_by_status_and_category() -> None:
             assert data['em_manutencao'] == 1
             assert data['total_recursos'] == 2  # disponivel + alocado
 
+            nomes = [item['nome'] for item in data['categorias']]
+            assert nomes[:6] == ['Notebook', 'Monitor', 'Periféricos', 'Rede', 'Desktop', 'Servidor']
+
             by_name = {item['nome']: item for item in data['categorias']}
             assert by_name['Notebook']['disponiveis'] == 0
             assert by_name['Notebook']['alocados'] == 1

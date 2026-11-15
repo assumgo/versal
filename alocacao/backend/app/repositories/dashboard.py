@@ -7,12 +7,15 @@ from collections import defaultdict
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
+from app.db.seed import DEFAULT_CATEGORIAS
 from app.models.alocacao import Alocacao
 from app.models.categoria import Categoria
 from app.models.equipamento import Equipamento
 from app.models.produto import Produto
 
 DESTINO_MANUTENCAO = 'manutencao'
+# Notebook, Monitor, Periféricos, Rede, Desktop, Servidor, depois demais A→Z
+CATEGORIA_ORDEM = {item['nome']: index for index, item in enumerate(DEFAULT_CATEGORIAS)}
 
 
 def _ativa_por_equipamento(db: Session) -> dict[int, Alocacao]:
@@ -22,9 +25,16 @@ def _ativa_por_equipamento(db: Session) -> dict[int, Alocacao]:
     return {row.equipamento_id: row for row in rows}
 
 
+def _ordenar_categorias(categorias: list[Categoria]) -> list[Categoria]:
+    return sorted(
+        categorias,
+        key=lambda item: (CATEGORIA_ORDEM.get(item.nome, len(CATEGORIA_ORDEM)), item.nome.casefold()),
+    )
+
+
 def build_dashboard_summary(db: Session) -> dict[str, object]:
-    categorias = list(
-        db.scalars(select(Categoria).where(Categoria.ativo.is_(True)).order_by(Categoria.nome.asc())).all()
+    categorias = _ordenar_categorias(
+        list(db.scalars(select(Categoria).where(Categoria.ativo.is_(True))).all())
     )
     equipamentos = list(
         db.scalars(
