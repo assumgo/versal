@@ -9,6 +9,7 @@ import { Equipamentos } from './pages/Equipamentos';
 import { Fornecedores } from './pages/Fornecedores';
 import { Login } from './pages/Login';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { Produtos } from './pages/Produtos';
 
 function ProtectedShell({
   children,
@@ -61,6 +62,14 @@ export default function App() {
         element={
           <CrudRoute ctaLabel="+ Nova categoria">
             {(createRequest) => <Categorias createRequest={createRequest} />}
+          </CrudRoute>
+        }
+      />
+      <Route
+        path="/cadastros/produtos"
+        element={
+          <CrudRoute ctaLabel="+ Novo produto">
+            {(createRequest) => <Produtos createRequest={createRequest} />}
           </CrudRoute>
         }
       />

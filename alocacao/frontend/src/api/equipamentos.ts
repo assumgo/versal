@@ -4,27 +4,26 @@ export type EquipamentoStatus = 'disponivel' | 'alocado';
 
 export type Equipamento = {
   id: number;
-  descricao: string;
-  marca: string;
-  modelo: string;
+  produto_id: number;
   numero_serie: string;
   numero_patrimonio: string;
   mac_address: string | null;
+  status: EquipamentoStatus;
+  produto_codigo: string;
+  produto_descricao: string;
+  marca: string;
+  modelo: string;
   categoria_id: number;
   categoria_nome: string;
-  status: EquipamentoStatus;
   created_at: string;
   updated_at: string;
 };
 
 export type EquipamentoInput = {
-  descricao: string;
-  marca: string;
-  modelo: string;
+  produto_id: number;
   numero_serie: string;
   numero_patrimonio: string;
   mac_address?: string | null;
-  categoria_id: number;
 };
 
 export type EquipamentoFilters = {

@@ -13,6 +13,7 @@ import {
 
 const cadastroChildren = [
   { to: '/cadastros/categorias', label: 'Categorias' },
+  { to: '/cadastros/produtos', label: 'Produtos' },
   { to: '/cadastros/colaboradores', label: 'Colaboradores' },
   { to: '/cadastros/fornecedores', label: 'Fornecedores' },
 ] as const;

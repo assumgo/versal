@@ -80,6 +80,7 @@ cp .env.example .env
 ## Cadastros (submenus)
 
 - `/cadastros/categorias` — CRUD de categorias (seed: Notebook, Monitor, Periféricos, Rede, Desktop, Servidor)
+- `/cadastros/produtos` — CRUD (Código único, Descrição, Marca, Modelo, Categoria)
 - `/cadastros/colaboradores` — CRUD (Nome, E-mail pessoal, CPF, Data nascimento, Celular)
 - `/cadastros/fornecedores` — CRUD (Razão social, Nome fantasia, CNPJ/CPF)
 
@@ -89,9 +90,10 @@ cp .env.example .env
 - Filtros: Categoria (Todas + cadastradas) e Status (Disponível / Alocado)
 - Botão **Pesquisar** aplica os filtros
 - CRUD: novo/editar/excluir (ID somente leitura na edição)
+- Campos do equipamento: Produto, Nº série, Nº patrimônio (único), MAC (opcional)
 - Status **Alocado** quando houver alocação ativa vinculada; caso contrário **Disponível**
 
-APIs: `/api/categorias`, `/api/colaboradores`, `/api/fornecedores`, `/api/equipamentos`  
+APIs: `/api/categorias`, `/api/produtos`, `/api/colaboradores`, `/api/fornecedores`, `/api/equipamentos`  
 Persistência local SQLite em `backend/data/alocacao.db`.
 
 ## Próximos passos

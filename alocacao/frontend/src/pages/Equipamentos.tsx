@@ -6,25 +6,20 @@ import {
   type Equipamento,
   type EquipamentoStatus,
 } from '../api/equipamentos';
+import { produtosApi, type Produto } from '../api/produtos';
 
 type FormState = {
-  descricao: string;
-  marca: string;
-  modelo: string;
+  produto_id: string;
   numero_serie: string;
   numero_patrimonio: string;
   mac_address: string;
-  categoria_id: string;
 };
 
 const emptyForm: FormState = {
-  descricao: '',
-  marca: '',
-  modelo: '',
+  produto_id: '',
   numero_serie: '',
   numero_patrimonio: '',
   mac_address: '',
-  categoria_id: '',
 };
 
 type EquipamentosProps = {
@@ -37,8 +32,9 @@ function statusLabel(status: EquipamentoStatus) {
 
 export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
   const formId = useId();
-  const descricaoRef = useRef<HTMLInputElement>(null);
+  const serieRef = useRef<HTMLInputElement>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
   const [filterCategoria, setFilterCategoria] = useState('');
   const [filterStatus, setFilterStatus] = useState<EquipamentoStatus>('disponivel');
   const [items, setItems] = useState<Equipamento[]>([]);
@@ -52,10 +48,12 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    void categoriasApi
-      .list(true)
-      .then((data) => setCategorias(data))
-      .catch((err) => setError(err instanceof Error ? err.message : 'Falha ao carregar categorias'));
+    void Promise.all([categoriasApi.list(true), produtosApi.list()])
+      .then(([cats, prods]) => {
+        setCategorias(cats);
+        setProdutos(prods);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : 'Falha ao carregar dados auxiliares'));
   }, []);
 
   useEffect(() => {
@@ -69,24 +67,21 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
     setFormOpen(true);
     setError('');
     setNotice('');
-    window.requestAnimationFrame(() => descricaoRef.current?.focus());
+    window.requestAnimationFrame(() => serieRef.current?.focus());
   }
 
   function openEdit(item: Equipamento) {
     setEditingId(item.id);
     setForm({
-      descricao: item.descricao,
-      marca: item.marca,
-      modelo: item.modelo,
+      produto_id: String(item.produto_id),
       numero_serie: item.numero_serie,
       numero_patrimonio: item.numero_patrimonio,
       mac_address: item.mac_address ?? '',
-      categoria_id: String(item.categoria_id),
     });
     setFormOpen(true);
     setError('');
     setNotice('');
-    window.requestAnimationFrame(() => descricaoRef.current?.focus());
+    window.requestAnimationFrame(() => serieRef.current?.focus());
   }
 
   function closeForm() {
@@ -116,21 +111,18 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!form.categoria_id) {
-      setError('Selecione uma categoria');
+    if (!form.produto_id) {
+      setError('Selecione um produto');
       return;
     }
     setSaving(true);
     setError('');
     setNotice('');
     const payload = {
-      descricao: form.descricao.trim(),
-      marca: form.marca.trim(),
-      modelo: form.modelo.trim(),
+      produto_id: Number(form.produto_id),
       numero_serie: form.numero_serie.trim(),
       numero_patrimonio: form.numero_patrimonio.trim(),
       mac_address: form.mac_address.trim() || null,
-      categoria_id: Number(form.categoria_id),
     };
     try {
       if (editingId) {
@@ -142,6 +134,10 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
       }
       closeForm();
       if (searched) await onSearch({ clearNotice: false });
+      else {
+        const prods = await produtosApi.list();
+        setProdutos(prods);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível salvar o equipamento');
     } finally {
@@ -150,7 +146,7 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
   }
 
   async function onDelete(item: Equipamento) {
-    if (!window.confirm(`Excluir o equipamento "${item.descricao}" (ID ${item.id})?`)) return;
+    if (!window.confirm(`Excluir o equipamento patrimônio "${item.numero_patrimonio}" (ID ${item.id})?`)) return;
     setError('');
     setNotice('');
     try {
@@ -238,55 +234,25 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
 
           <div className="form-grid-2">
             <div className="field">
-              <label htmlFor={`${formId}-descricao`}>Descrição</label>
-              <input
-                ref={descricaoRef}
-                id={`${formId}-descricao`}
-                value={form.descricao}
-                onChange={(event) => setForm((current) => ({ ...current, descricao: event.target.value }))}
-                required
-                maxLength={200}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor={`${formId}-categoria`}>Categoria</label>
+              <label htmlFor={`${formId}-produto`}>Produto</label>
               <select
-                id={`${formId}-categoria`}
-                value={form.categoria_id}
-                onChange={(event) => setForm((current) => ({ ...current, categoria_id: event.target.value }))}
+                id={`${formId}-produto`}
+                value={form.produto_id}
+                onChange={(event) => setForm((current) => ({ ...current, produto_id: event.target.value }))}
                 required
               >
                 <option value="">Selecione</option>
-                {categorias.map((categoria) => (
-                  <option key={categoria.id} value={categoria.id}>
-                    {categoria.nome}
+                {produtos.map((produto) => (
+                  <option key={produto.id} value={produto.id}>
+                    {produto.codigo} — {produto.descricao}
                   </option>
                 ))}
               </select>
             </div>
             <div className="field">
-              <label htmlFor={`${formId}-marca`}>Marca</label>
-              <input
-                id={`${formId}-marca`}
-                value={form.marca}
-                onChange={(event) => setForm((current) => ({ ...current, marca: event.target.value }))}
-                required
-                maxLength={100}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor={`${formId}-modelo`}>Modelo</label>
-              <input
-                id={`${formId}-modelo`}
-                value={form.modelo}
-                onChange={(event) => setForm((current) => ({ ...current, modelo: event.target.value }))}
-                required
-                maxLength={100}
-              />
-            </div>
-            <div className="field">
               <label htmlFor={`${formId}-serie`}>Número de série</label>
               <input
+                ref={serieRef}
                 id={`${formId}-serie`}
                 value={form.numero_serie}
                 onChange={(event) => setForm((current) => ({ ...current, numero_serie: event.target.value }))}
@@ -318,7 +284,13 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={saving}>
+          {produtos.length === 0 && (
+            <div className="form-alert error" role="status">
+              Cadastre um produto em Cadastros → Produtos antes de incluir equipamentos.
+            </div>
+          )}
+
+          <button type="submit" className="btn btn-primary" disabled={saving || produtos.length === 0}>
             {saving ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Incluir equipamento'}
           </button>
         </form>
@@ -342,7 +314,7 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Descrição</th>
+                  <th>Produto</th>
                   <th>Marca</th>
                   <th>Modelo</th>
                   <th>Série</th>
@@ -358,7 +330,8 @@ export function Equipamentos({ createRequest = 0 }: EquipamentosProps) {
                   <tr key={item.id} className={editingId === item.id ? 'row-selected' : undefined}>
                     <td>{item.id}</td>
                     <td>
-                      <strong>{item.descricao}</strong>
+                      <strong>{item.produto_codigo}</strong>
+                      <div className="muted">{item.produto_descricao}</div>
                     </td>
                     <td>{item.marca}</td>
                     <td>{item.modelo}</td>

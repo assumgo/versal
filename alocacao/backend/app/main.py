@@ -5,10 +5,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
+from app.db.migrate import ensure_schema
 from app.db.seed import seed_categorias
-from app.db.session import Base, SessionLocal, engine
-from app.models import Alocacao, Categoria, Colaborador, Equipamento, Fornecedor  # noqa: F401
-from app.routers import categorias, colaboradores, equipamentos, fornecedores
+from app.db.session import SessionLocal, engine
+from app.models import Alocacao, Categoria, Colaborador, Equipamento, Fornecedor, Produto  # noqa: F401
+from app.routers import categorias, colaboradores, equipamentos, fornecedores, produtos
 
 settings = get_settings()
 
@@ -18,7 +19,7 @@ async def lifespan(_app: FastAPI):
     if settings.database_url.startswith('sqlite:///'):
         db_path = Path(settings.database_url.replace('sqlite:///', '', 1))
         db_path.parent.mkdir(parents=True, exist_ok=True)
-    Base.metadata.create_all(bind=engine)
+    ensure_schema(engine)
     db = SessionLocal()
     try:
         seed_categorias(db)
@@ -38,6 +39,7 @@ app.add_middleware(
 app.include_router(categorias.router, prefix=settings.api_prefix)
 app.include_router(colaboradores.router, prefix=settings.api_prefix)
 app.include_router(fornecedores.router, prefix=settings.api_prefix)
+app.include_router(produtos.router, prefix=settings.api_prefix)
 app.include_router(equipamentos.router, prefix=settings.api_prefix)
 
 

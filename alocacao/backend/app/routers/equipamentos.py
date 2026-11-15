@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models.categoria import Categoria
+from app.models.produto import Produto
 from app.repositories import equipamentos as repo
 from app.schemas.equipamento import (
     EquipamentoCreate,
@@ -15,17 +15,21 @@ router = APIRouter(prefix='/equipamentos', tags=['equipamentos'])
 
 
 def _to_out(db: Session, equipamento) -> EquipamentoOut:
+    produto = equipamento.produto
+    categoria = produto.categoria if produto else None
     return EquipamentoOut(
         id=equipamento.id,
-        descricao=equipamento.descricao,
-        marca=equipamento.marca,
-        modelo=equipamento.modelo,
+        produto_id=equipamento.produto_id,
         numero_serie=equipamento.numero_serie,
         numero_patrimonio=equipamento.numero_patrimonio,
         mac_address=equipamento.mac_address,
-        categoria_id=equipamento.categoria_id,
-        categoria_nome=equipamento.categoria.nome if equipamento.categoria else '',
         status=repo.equipamento_status(db, equipamento.id),
+        produto_codigo=produto.codigo if produto else '',
+        produto_descricao=produto.descricao if produto else '',
+        marca=produto.marca if produto else '',
+        modelo=produto.modelo if produto else '',
+        categoria_id=produto.categoria_id if produto else 0,
+        categoria_nome=categoria.nome if categoria else '',
         created_at=equipamento.created_at,
         updated_at=equipamento.updated_at,
     )
@@ -51,8 +55,8 @@ def obter(equipamento_id: int, db: Session = Depends(get_db)) -> EquipamentoOut:
 
 @router.post('', response_model=EquipamentoOut, status_code=status.HTTP_201_CREATED)
 def criar(payload: EquipamentoCreate, db: Session = Depends(get_db)) -> EquipamentoOut:
-    if not db.get(Categoria, payload.categoria_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Categoria inválida')
+    if not db.get(Produto, payload.produto_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Produto inválido')
     if repo.get_by_patrimonio(db, payload.numero_patrimonio):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -71,8 +75,8 @@ def atualizar(
     equipamento = repo.get_equipamento(db, equipamento_id)
     if not equipamento:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Equipamento não encontrado')
-    if payload.categoria_id is not None and not db.get(Categoria, payload.categoria_id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Categoria inválida')
+    if payload.produto_id is not None and not db.get(Produto, payload.produto_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Produto inválido')
     if payload.numero_patrimonio:
         other = repo.get_by_patrimonio(db, payload.numero_patrimonio)
         if other and other.id != equipamento_id:

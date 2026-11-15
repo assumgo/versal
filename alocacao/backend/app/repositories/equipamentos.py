@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.alocacao import Alocacao
 from app.models.equipamento import Equipamento
+from app.models.produto import Produto
 from app.schemas.equipamento import EquipamentoCreate, EquipamentoUpdate, StatusEquipamento
 
 
@@ -29,9 +30,13 @@ def list_equipamentos(
     categoria_id: int | None = None,
     status: StatusEquipamento | None = None,
 ) -> list[Equipamento]:
-    query = select(Equipamento).options(joinedload(Equipamento.categoria)).order_by(Equipamento.id.asc())
+    query = (
+        select(Equipamento)
+        .options(joinedload(Equipamento.produto).joinedload(Produto.categoria))
+        .order_by(Equipamento.id.asc())
+    )
     if categoria_id is not None:
-        query = query.where(Equipamento.categoria_id == categoria_id)
+        query = query.join(Equipamento.produto).where(Produto.categoria_id == categoria_id)
     if status == 'alocado':
         query = query.where(_ativo_alocado_exists())
     elif status == 'disponivel':
@@ -42,7 +47,7 @@ def list_equipamentos(
 def get_equipamento(db: Session, equipamento_id: int) -> Equipamento | None:
     return db.scalars(
         select(Equipamento)
-        .options(joinedload(Equipamento.categoria))
+        .options(joinedload(Equipamento.produto).joinedload(Produto.categoria))
         .where(Equipamento.id == equipamento_id)
     ).unique().first()
 
@@ -55,13 +60,10 @@ def get_by_patrimonio(db: Session, numero_patrimonio: str) -> Equipamento | None
 
 def create_equipamento(db: Session, payload: EquipamentoCreate) -> Equipamento:
     equipamento = Equipamento(
-        descricao=payload.descricao,
-        marca=payload.marca,
-        modelo=payload.modelo,
+        produto_id=payload.produto_id,
         numero_serie=payload.numero_serie,
         numero_patrimonio=payload.numero_patrimonio,
         mac_address=payload.mac_address,
-        categoria_id=payload.categoria_id,
     )
     db.add(equipamento)
     db.commit()
@@ -78,7 +80,6 @@ def update_equipamento(db: Session, equipamento: Equipamento, payload: Equipamen
 
 
 def delete_equipamento(db: Session, equipamento: Equipamento) -> None:
-    # Remove histórico inativo; exclusão com alocação ativa é bloqueada na API.
     inativas = db.scalars(
         select(Alocacao).where(
             Alocacao.equipamento_id == equipamento.id,

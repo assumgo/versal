@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -42,32 +42,41 @@ def test_equipamento_crud_and_status_filters(client) -> None:
     categorias = test_client.get('/api/categorias').json()
     categoria_id = next(item['id'] for item in categorias if item['nome'] == 'Notebook')
 
-    created = test_client.post(
-        '/api/equipamentos',
+    produto = test_client.post(
+        '/api/produtos',
         json={
+            'codigo': 'NB-100',
             'descricao': 'Notebook corporativo',
             'marca': 'Dell',
             'modelo': 'Latitude 5440',
+            'categoria_id': categoria_id,
+        },
+    )
+    assert produto.status_code == 201, produto.text
+    produto_id = produto.json()['id']
+
+    created = test_client.post(
+        '/api/equipamentos',
+        json={
+            'produto_id': produto_id,
             'numero_serie': 'SN-001',
             'numero_patrimonio': 'PAT-001',
             'mac_address': 'AA:BB:CC:DD:EE:FF',
-            'categoria_id': categoria_id,
         },
     )
     assert created.status_code == 201, created.text
     equipamento = created.json()
     assert equipamento['status'] == 'disponivel'
+    assert equipamento['produto_codigo'] == 'NB-100'
     assert equipamento['categoria_nome'] == 'Notebook'
+    assert 'descricao' not in equipamento or equipamento.get('produto_descricao') == 'Notebook corporativo'
 
     conflict = test_client.post(
         '/api/equipamentos',
         json={
-            'descricao': 'Outro',
-            'marca': 'Dell',
-            'modelo': 'X',
+            'produto_id': produto_id,
             'numero_serie': 'SN-002',
             'numero_patrimonio': 'PAT-001',
-            'categoria_id': categoria_id,
         },
     )
     assert conflict.status_code == 409
@@ -89,10 +98,11 @@ def test_equipamento_crud_and_status_filters(client) -> None:
     by_cat = test_client.get('/api/equipamentos', params={'categoria_id': categoria_id})
     assert len(by_cat.json()) == 1
 
+    blocked_produto = test_client.delete(f'/api/produtos/{produto_id}')
+    assert blocked_produto.status_code == 409
+
     blocked = test_client.delete(f"/api/equipamentos/{equipamento['id']}")
     assert blocked.status_code == 409
-
-    from sqlalchemy import select
 
     db = TestingSession()
     alocacao = db.scalars(select(Alocacao).where(Alocacao.equipamento_id == equipamento['id'])).one()
@@ -103,11 +113,14 @@ def test_equipamento_crud_and_status_filters(client) -> None:
 
     updated = test_client.put(
         f"/api/equipamentos/{equipamento['id']}",
-        json={'descricao': 'Notebook atualizado'},
+        json={'numero_serie': 'SN-001-B'},
     )
     assert updated.status_code == 200
-    assert updated.json()['descricao'] == 'Notebook atualizado'
+    assert updated.json()['numero_serie'] == 'SN-001-B'
     assert updated.json()['status'] == 'disponivel'
 
     deleted = test_client.delete(f"/api/equipamentos/{equipamento['id']}")
     assert deleted.status_code == 204
+
+    deleted_produto = test_client.delete(f'/api/produtos/{produto_id}')
+    assert deleted_produto.status_code == 204
