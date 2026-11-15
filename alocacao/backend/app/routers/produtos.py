@@ -40,8 +40,6 @@ def obter(produto_id: int, db: Session = Depends(get_db)) -> ProdutoOut:
 def criar(payload: ProdutoCreate, db: Session = Depends(get_db)) -> ProdutoOut:
     if not db.get(Categoria, payload.categoria_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Categoria inválida')
-    if repo.get_by_codigo(db, payload.codigo):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Já existe produto com este código')
     return _to_out(repo.create_produto(db, payload))
 
 
@@ -52,10 +50,6 @@ def atualizar(produto_id: int, payload: ProdutoUpdate, db: Session = Depends(get
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Produto não encontrado')
     if payload.categoria_id is not None and not db.get(Categoria, payload.categoria_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Categoria inválida')
-    if payload.codigo:
-        other = repo.get_by_codigo(db, payload.codigo)
-        if other and other.id != produto_id:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Já existe produto com este código')
     return _to_out(repo.update_produto(db, produto, payload))
 
 

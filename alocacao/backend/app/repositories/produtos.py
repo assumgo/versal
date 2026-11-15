@@ -1,8 +1,13 @@
+import re
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.produto import Produto
 from app.schemas.produto import ProdutoCreate, ProdutoUpdate
+
+CODIGO_PREFIX = 'PRD-'
+CODIGO_PATTERN = re.compile(r'^PRD-(\d+)$')
 
 
 def list_produtos(db: Session) -> list[Produto]:
@@ -23,9 +28,25 @@ def get_by_codigo(db: Session, codigo: str) -> Produto | None:
     return db.scalars(select(Produto).where(Produto.codigo == codigo.strip())).first()
 
 
+def generate_codigo(db: Session) -> str:
+    """Gera próximo código único no formato PRD-000001."""
+    codes = db.scalars(select(Produto.codigo)).all()
+    max_n = 0
+    for code in codes:
+        match = CODIGO_PATTERN.match(code or '')
+        if match:
+            max_n = max(max_n, int(match.group(1)))
+    next_n = max_n + 1
+    while True:
+        candidate = f'{CODIGO_PREFIX}{next_n:06d}'
+        if not get_by_codigo(db, candidate):
+            return candidate
+        next_n += 1
+
+
 def create_produto(db: Session, payload: ProdutoCreate) -> Produto:
     produto = Produto(
-        codigo=payload.codigo,
+        codigo=generate_codigo(db),
         descricao=payload.descricao,
         marca=payload.marca,
         modelo=payload.modelo,
@@ -38,6 +59,8 @@ def create_produto(db: Session, payload: ProdutoCreate) -> Produto:
 
 def update_produto(db: Session, produto: Produto, payload: ProdutoUpdate) -> Produto:
     data = payload.model_dump(exclude_unset=True)
+    # Código é imutável após a criação.
+    data.pop('codigo', None)
     for key, value in data.items():
         setattr(produto, key, value)
     db.add(produto)

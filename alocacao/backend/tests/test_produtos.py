@@ -1,8 +1,8 @@
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+import pytest
 
 from app.db.seed import seed_categorias
 from app.db.session import Base, get_db
@@ -36,40 +36,45 @@ def client():
     Base.metadata.drop_all(bind=engine)
 
 
-def test_produto_crud(client: TestClient) -> None:
+def test_produto_codigo_automatico_e_unico(client: TestClient) -> None:
     categorias = client.get('/api/categorias').json()
     categoria_id = next(item['id'] for item in categorias if item['nome'] == 'Notebook')
 
-    created = client.post(
+    first = client.post(
         '/api/produtos',
         json={
-            'codigo': 'NB-001',
             'descricao': 'Notebook corporativo 14"',
             'marca': 'Dell',
             'modelo': 'Latitude 5440',
             'categoria_id': categoria_id,
         },
     )
-    assert created.status_code == 201, created.text
-    body = created.json()
-    assert body['codigo'] == 'NB-001'
+    assert first.status_code == 201, first.text
+    body = first.json()
+    assert body['codigo'].startswith('PRD-')
     assert body['categoria_nome'] == 'Notebook'
 
-    conflict = client.post(
+    second = client.post(
         '/api/produtos',
         json={
-            'codigo': 'NB-001',
-            'descricao': 'Outro',
+            'descricao': 'Notebook 2',
             'marca': 'HP',
-            'modelo': 'X',
+            'modelo': 'ProBook',
             'categoria_id': categoria_id,
         },
     )
-    assert conflict.status_code == 409
+    assert second.status_code == 201, second.text
+    assert second.json()['codigo'] != body['codigo']
+    assert second.json()['codigo'].startswith('PRD-')
 
-    updated = client.put(f"/api/produtos/{body['id']}", json={'descricao': 'Notebook atualizado'})
+    # Código não pode ser alterado via update mesmo se enviado.
+    updated = client.put(
+        f"/api/produtos/{body['id']}",
+        json={'descricao': 'Notebook atualizado', 'codigo': 'HACK-001'},
+    )
     assert updated.status_code == 200
     assert updated.json()['descricao'] == 'Notebook atualizado'
+    assert updated.json()['codigo'] == body['codigo']
 
     deleted = client.delete(f"/api/produtos/{body['id']}")
     assert deleted.status_code == 204

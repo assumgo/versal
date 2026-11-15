@@ -25,7 +25,7 @@ type ProdutosProps = {
 
 export function Produtos({ createRequest = 0 }: ProdutosProps) {
   const formId = useId();
-  const codigoRef = useRef<HTMLInputElement>(null);
+  const descricaoRef = useRef<HTMLInputElement>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [items, setItems] = useState<Produto[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -61,7 +61,7 @@ export function Produtos({ createRequest = 0 }: ProdutosProps) {
     setForm(emptyForm);
     setNotice('');
     setError('');
-    window.requestAnimationFrame(() => codigoRef.current?.focus());
+    window.requestAnimationFrame(() => descricaoRef.current?.focus());
   }, [createRequest]);
 
   function startEdit(item: Produto) {
@@ -75,7 +75,7 @@ export function Produtos({ createRequest = 0 }: ProdutosProps) {
     });
     setNotice('');
     setError('');
-    codigoRef.current?.focus();
+    descricaoRef.current?.focus();
   }
 
   function resetForm() {
@@ -94,7 +94,6 @@ export function Produtos({ createRequest = 0 }: ProdutosProps) {
     setError('');
     setNotice('');
     const payload = {
-      codigo: form.codigo.trim(),
       descricao: form.descricao.trim(),
       marca: form.marca.trim(),
       modelo: form.modelo.trim(),
@@ -153,18 +152,17 @@ export function Produtos({ createRequest = 0 }: ProdutosProps) {
           <div className="field">
             <label htmlFor={`${formId}-codigo`}>Código</label>
             <input
-              ref={codigoRef}
               id={`${formId}-codigo`}
-              value={form.codigo}
-              onChange={(event) => setForm((current) => ({ ...current, codigo: event.target.value }))}
-              required
-              maxLength={60}
+              value={editingId ? form.codigo : 'Gerado automaticamente'}
+              disabled
+              readOnly
             />
           </div>
 
           <div className="field">
             <label htmlFor={`${formId}-descricao`}>Descrição</label>
             <input
+              ref={descricaoRef}
               id={`${formId}-descricao`}
               value={form.descricao}
               onChange={(event) => setForm((current) => ({ ...current, descricao: event.target.value }))}
@@ -223,7 +221,7 @@ export function Produtos({ createRequest = 0 }: ProdutosProps) {
             </div>
           )}
 
-          <button type="submit" className="btn btn-primary" disabled={saving || !form.codigo.trim()}>
+          <button type="submit" className="btn btn-primary" disabled={saving || !form.descricao.trim()}>
             {saving ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Criar produto'}
           </button>
         </form>

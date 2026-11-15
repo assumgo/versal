@@ -13,7 +13,6 @@ export type Produto = {
 };
 
 export type ProdutoInput = {
-  codigo: string;
   descricao: string;
   marca: string;
   modelo: string;

@@ -45,7 +45,6 @@ def test_equipamento_crud_and_status_filters(client) -> None:
     produto = test_client.post(
         '/api/produtos',
         json={
-            'codigo': 'NB-100',
             'descricao': 'Notebook corporativo',
             'marca': 'Dell',
             'modelo': 'Latitude 5440',
@@ -53,7 +52,9 @@ def test_equipamento_crud_and_status_filters(client) -> None:
         },
     )
     assert produto.status_code == 201, produto.text
-    produto_id = produto.json()['id']
+    produto_body = produto.json()
+    produto_id = produto_body['id']
+    assert produto_body['codigo'].startswith('PRD-')
 
     created = test_client.post(
         '/api/equipamentos',
@@ -67,7 +68,7 @@ def test_equipamento_crud_and_status_filters(client) -> None:
     assert created.status_code == 201, created.text
     equipamento = created.json()
     assert equipamento['status'] == 'disponivel'
-    assert equipamento['produto_codigo'] == 'NB-100'
+    assert equipamento['produto_codigo'] == produto_body['codigo']
     assert equipamento['categoria_nome'] == 'Notebook'
     assert 'descricao' not in equipamento or equipamento.get('produto_descricao') == 'Notebook corporativo'
 

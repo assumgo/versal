@@ -80,7 +80,7 @@ cp .env.example .env
 ## Cadastros (submenus)
 
 - `/cadastros/categorias` — CRUD de categorias (seed: Notebook, Monitor, Periféricos, Rede, Desktop, Servidor)
-- `/cadastros/produtos` — CRUD (Código único, Descrição, Marca, Modelo, Categoria)
+- `/cadastros/produtos` — CRUD (Código gerado automaticamente/único, Descrição, Marca, Modelo, Categoria)
 - `/cadastros/colaboradores` — CRUD (Nome, E-mail pessoal, CPF, Data nascimento, Celular)
 - `/cadastros/fornecedores` — CRUD (Razão social, Nome fantasia, CNPJ/CPF)
 
