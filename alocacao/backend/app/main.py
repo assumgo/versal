@@ -8,8 +8,27 @@ from app.core.config import get_settings
 from app.db.migrate import ensure_schema
 from app.db.seed import seed_categorias
 from app.db.session import SessionLocal, engine
-from app.models import Alocacao, Categoria, Colaborador, Equipamento, Fornecedor, Produto, Tre, TreItem  # noqa: F401
-from app.routers import alocacoes, categorias, colaboradores, equipamentos, fornecedores, produtos, tres
+from app.models import (  # noqa: F401
+    Alocacao,
+    Categoria,
+    Colaborador,
+    Equipamento,
+    Fornecedor,
+    Local,
+    Produto,
+    Tre,
+    TreItem,
+)
+from app.routers import (
+    alocacoes,
+    categorias,
+    colaboradores,
+    equipamentos,
+    fornecedores,
+    locais,
+    produtos,
+    tres,
+)
 
 settings = get_settings()
 
@@ -39,6 +58,7 @@ app.add_middleware(
 app.include_router(categorias.router, prefix=settings.api_prefix)
 app.include_router(colaboradores.router, prefix=settings.api_prefix)
 app.include_router(fornecedores.router, prefix=settings.api_prefix)
+app.include_router(locais.router, prefix=settings.api_prefix)
 app.include_router(produtos.router, prefix=settings.api_prefix)
 app.include_router(equipamentos.router, prefix=settings.api_prefix)
 app.include_router(alocacoes.router, prefix=settings.api_prefix)
@@ -56,6 +76,7 @@ def meta() -> dict[str, object]:
         'name': settings.app_name,
         'modules': [
             'cadastros',
+            'locais',
             'configuracoes',
             'notas-fiscais',
             'tres',

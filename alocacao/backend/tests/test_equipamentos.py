@@ -97,7 +97,16 @@ def test_equipamento_crud_and_status_filters(client) -> None:
     assert conflict.status_code == 409
 
     db = TestingSession()
-    db.add(Alocacao(equipamento_id=equipamento['id'], ativa=True))
+    db.add(
+        Alocacao(
+            codigo='000099',
+            tipo='entrega',
+            destino_tipo='local',
+            equipamento_id=equipamento['id'],
+            quantidade=1,
+            ativa=True,
+        )
+    )
     db.commit()
     db.close()
 

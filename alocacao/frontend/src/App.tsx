@@ -9,6 +9,7 @@ import { Equipamentos } from './pages/Equipamentos';
 import { Fornecedores } from './pages/Fornecedores';
 import { Login } from './pages/Login';
 import { Alocacoes } from './pages/Alocacoes';
+import { Locais } from './pages/Locais';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { Produtos } from './pages/Produtos';
 import { Tres } from './pages/Tres';
@@ -88,6 +89,14 @@ export default function App() {
         element={
           <CrudRoute ctaLabel="+ Novo fornecedor">
             {(createRequest) => <Fornecedores createRequest={createRequest} />}
+          </CrudRoute>
+        }
+      />
+      <Route
+        path="/cadastros/locais"
+        element={
+          <CrudRoute ctaLabel="+ Novo local">
+            {(createRequest) => <Locais createRequest={createRequest} />}
           </CrudRoute>
         }
       />

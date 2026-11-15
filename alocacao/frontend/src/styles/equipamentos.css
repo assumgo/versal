@@ -14,6 +14,34 @@
   grid-template-columns: repeat(4, minmax(140px, 1fr)) auto;
 }
 
+.filters-panel .locais-filters {
+  grid-template-columns: minmax(220px, 1fr) auto;
+}
+
+.filters-panel .locais-filters .filters-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.cadastro-form textarea {
+  width: 100%;
+  border: 1px solid transparent;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.85rem;
+  resize: vertical;
+  min-height: 6rem;
+  font: inherit;
+}
+
+.cadastro-form textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: none;
+}
+
 .filters-panel input[type='text'],
 .filters-panel input[type='date'],
 .filters-panel input:not([type]) {
@@ -104,6 +132,7 @@
 @media (max-width: 900px) {
   .filters-panel .filters-grid,
   .filters-panel .tre-filters,
+  .filters-panel .locais-filters,
   .form-grid-2 {
     grid-template-columns: 1fr;
   }

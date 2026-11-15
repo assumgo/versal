@@ -16,6 +16,7 @@ const cadastroChildren = [
   { to: '/cadastros/produtos', label: 'Produtos' },
   { to: '/cadastros/colaboradores', label: 'Colaboradores' },
   { to: '/cadastros/fornecedores', label: 'Fornecedores' },
+  { to: '/cadastros/locais', label: 'Locais' },
 ] as const;
 
 const items = [

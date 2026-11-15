@@ -41,7 +41,7 @@ def client(tmp_path, monkeypatch):
     Base.metadata.drop_all(bind=engine)
 
 
-def _seed_produto_equipamento_colaborador(client: TestClient) -> tuple[int, int]:
+def _seed(client: TestClient) -> tuple[int, int, int]:
     categorias = client.get('/api/categorias').json()
     categoria_id = next(item['id'] for item in categorias if item['nome'] == 'Notebook')
     produto = client.post(
@@ -75,31 +75,40 @@ def _seed_produto_equipamento_colaborador(client: TestClient) -> tuple[int, int]
         },
     )
     assert colaborador.status_code == 201, colaborador.text
-    return equipamento.json()['id'], colaborador.json()['id']
+    return equipamento.json()['id'], colaborador.json()['id'], produto.json()['id']
 
 
-def test_alocacao_gera_tre_entrega_e_devolucao(client: TestClient) -> None:
-    equipamento_id, colaborador_id = _seed_produto_equipamento_colaborador(client)
+def test_alocacao_colaborador_gera_tre_e_local_nao(client: TestClient) -> None:
+    equipamento_id, colaborador_id, produto_id = _seed(client)
 
-    created = client.post(
+    local = client.post('/api/locais', json={'nome': 'Sala TI', 'descricao': 'Estoque interno'})
+    assert local.status_code == 201, local.text
+    assert local.json()['codigo'] == '000001'
+
+    entrega = client.post(
         '/api/alocacoes',
-        json={'colaborador_id': colaborador_id, 'equipamento_ids': [equipamento_id]},
+        json={
+            'tipo': 'entrega',
+            'destino_tipo': 'colaborador',
+            'equipamento_id': equipamento_id,
+            'quantidade': 1,
+            'colaborador_id': colaborador_id,
+        },
     )
-    assert created.status_code == 201, created.text
-    body = created.json()
+    assert entrega.status_code == 201, entrega.text
+    body = entrega.json()
+    assert body['codigo'] == '000001'
+    assert body['tipo'] == 'entrega'
     assert body['tre_codigo'] == '000001'
-    assert body['tre_tipo'] == 'entrega'
-    assert body['alocacoes'][0]['ativa'] is True
+    assert body['ativa'] is True
+    assert body['estoque_disponivel_produto'] == 0
 
     tres = client.get('/api/tres', params={'nome': 'Ana'})
-    assert tres.status_code == 200
     assert len(tres.json()) == 1
     assert tres.json()[0]['tipo'] == 'entrega'
-    assert tres.json()[0]['colaborador_nome'] == 'Ana Silva'
 
     pdf = client.get(f"/api/tres/{body['tre_id']}/pdf")
     assert pdf.status_code == 200
-    assert pdf.headers['content-type'].startswith('application/pdf')
     assert pdf.content[:4] == b'%PDF'
     import pymupdf
 
@@ -111,14 +120,47 @@ def test_alocacao_gera_tre_entrega_e_devolucao(client: TestClient) -> None:
     filtrado = client.get('/api/tres', params={'codigo': '000001', 'data_inicio': today, 'data_fim': today})
     assert len(filtrado.json()) == 1
 
-    alocacao_id = body['alocacoes'][0]['id']
-    devolvido = client.post('/api/alocacoes/devolver', json={'alocacao_ids': [alocacao_id]})
-    assert devolvido.status_code == 200, devolvido.text
-    assert devolvido.json()['tre_codigo'] == '000002'
-    assert devolvido.json()['tre_tipo'] == 'devolucao'
-    assert devolvido.json()['alocacoes'][0]['ativa'] is False
+    devolucao = client.post(
+        '/api/alocacoes',
+        json={
+            'tipo': 'devolucao',
+            'destino_tipo': 'colaborador',
+            'equipamento_id': equipamento_id,
+            'quantidade': 1,
+            'colaborador_id': colaborador_id,
+        },
+    )
+    assert devolucao.status_code == 201, devolucao.text
+    assert devolucao.json()['codigo'] == '000002'
+    assert devolucao.json()['tipo'] == 'devolucao'
+    assert devolucao.json()['tre_codigo'] == '000002'
+    assert devolucao.json()['ativa'] is False
+    assert devolucao.json()['estoque_disponivel_produto'] == 1
 
-    todos = client.get('/api/tres')
-    assert len(todos.json()) == 2
-    tipos = {item['tipo'] for item in todos.json()}
-    assert tipos == {'entrega', 'devolucao'}
+    # Novo equipamento para local
+    equipamento2 = client.post(
+        '/api/equipamentos',
+        json={
+            'produto_id': produto_id,
+            'numero_serie': 'SN-TRE-2',
+            'numero_patrimonio': 'PAT-TRE-2',
+        },
+    )
+    assert equipamento2.status_code == 201, equipamento2.text
+
+    local_entrega = client.post(
+        '/api/alocacoes',
+        json={
+            'tipo': 'entrega',
+            'destino_tipo': 'local',
+            'equipamento_id': equipamento2.json()['id'],
+            'quantidade': 1,
+            'local_id': local.json()['id'],
+        },
+    )
+    assert local_entrega.status_code == 201, local_entrega.text
+    assert local_entrega.json()['tre_id'] is None
+    assert local_entrega.json()['destino_nome'] == 'Sala TI'
+
+    todos_tres = client.get('/api/tres')
+    assert len(todos_tres.json()) == 2

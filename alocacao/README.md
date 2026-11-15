@@ -83,6 +83,7 @@ cp .env.example .env
 - `/cadastros/produtos` — CRUD (Código numérico sequencial automático a partir de `000001`, Descrição, Marca, Modelo, Categoria)
 - `/cadastros/colaboradores` — CRUD (Nome, E-mail pessoal, CPF, Data nascimento, Celular)
 - `/cadastros/fornecedores` — CRUD (Razão social, Nome fantasia, CNPJ/CPF)
+- `/cadastros/locais` — CRUD (Código sequencial automático, Nome, Descrição) com pesquisa por nome/código e Ver todos
 
 ### Equipamentos
 
@@ -103,10 +104,14 @@ cp .env.example .env
 
 ### Alocações
 
-- Página `/alocacoes`: aloca equipamentos disponíveis a um colaborador e emite TRE de entrega
-- Devolução de alocações ativas emite TRE de devolução e libera o equipamento
+- Página `/alocacoes` com form iniciando por Tipo (Entrega/Devolução) e Destino (Colaborador/Local)
+- Campos: Código automático, Equipamento, Quantidade, Local ou Colaborador, Data de criação
+- Colaborador: gera TRE de entrega ou devolução automaticamente
+- Local: apenas registra o movimento e atualiza o estoque disponível do produto
+- Movimentação permitida somente para equipamentos (produto com vínculo a equipamento)
+- Grade com pesquisa e Ver todos
 
-APIs: `/api/categorias`, `/api/produtos`, `/api/colaboradores`, `/api/fornecedores`, `/api/equipamentos`, `/api/alocacoes`, `/api/tres`  
+APIs: `/api/categorias`, `/api/produtos`, `/api/colaboradores`, `/api/fornecedores`, `/api/locais`, `/api/equipamentos`, `/api/alocacoes`, `/api/tres`  
 Persistência local SQLite em `backend/data/alocacao.db`.
 
 ## Próximos passos

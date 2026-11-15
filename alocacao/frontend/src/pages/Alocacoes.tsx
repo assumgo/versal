@@ -1,122 +1,163 @@
 import { useEffect, useId, useState, type FormEvent } from 'react';
-import { alocacoesApi, type Alocacao } from '../api/alocacoes';
+import {
+  alocacoesApi,
+  type Alocacao,
+  type AlocacaoTipo,
+  type DestinoTipo,
+} from '../api/alocacoes';
 import { ApiError } from '../api/client';
 import { colaboradoresApi, type Colaborador } from '../api/colaboradores';
 import { equipamentosApi, type Equipamento } from '../api/equipamentos';
+import { locaisApi, type Local } from '../api/locais';
 import { tresApi } from '../api/tres';
 
 type AlocacoesProps = {
   createRequest?: number;
 };
 
+function formatDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  }).format(date);
+}
+
 export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
   const formId = useId();
+  const [items, setItems] = useState<Alocacao[]>([]);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
-  const [disponiveis, setDisponiveis] = useState<Equipamento[]>([]);
-  const [ativas, setAtivas] = useState<Alocacao[]>([]);
-  const [colaboradorId, setColaboradorId] = useState('');
-  const [selectedEquipamentos, setSelectedEquipamentos] = useState<number[]>([]);
-  const [selectedAlocacoes, setSelectedAlocacoes] = useState<number[]>([]);
+  const [locais, setLocais] = useState<Local[]>([]);
+  const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [formOpen, setFormOpen] = useState(false);
+  const [tipo, setTipo] = useState<AlocacaoTipo>('entrega');
+  const [destinoTipo, setDestinoTipo] = useState<DestinoTipo>('colaborador');
+  const [equipamentoId, setEquipamentoId] = useState('');
+  const [quantidade, setQuantidade] = useState('1');
+  const [colaboradorId, setColaboradorId] = useState('');
+  const [localId, setLocalId] = useState('');
+  const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  async function load() {
+  async function loadAux() {
+    const [cols, locs] = await Promise.all([colaboradoresApi.list(), locaisApi.list()]);
+    setColaboradores(cols.filter((item) => item.ativo));
+    setLocais(locs);
+  }
+
+  async function loadEquipamentos(nextTipo: AlocacaoTipo) {
+    const status = nextTipo === 'entrega' ? 'disponivel' : 'alocado';
+    setEquipamentos(await equipamentosApi.list({ status }));
+  }
+
+  async function loadAlocacoes(q?: string) {
+    setLoading(true);
     setError('');
     try {
-      const [cols, equips, alocs] = await Promise.all([
-        colaboradoresApi.list(),
-        equipamentosApi.list({ status: 'disponivel' }),
-        alocacoesApi.list(true),
-      ]);
-      setColaboradores(cols.filter((item) => item.ativo));
-      setDisponiveis(equips);
-      setAtivas(alocs);
+      setItems(await alocacoesApi.list({ q: q || undefined }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar alocações');
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => {
-    void load();
+    void Promise.all([loadAux(), loadAlocacoes(), loadEquipamentos('entrega')]).catch((err) =>
+      setError(err instanceof Error ? err.message : 'Falha ao carregar dados'),
+    );
   }, []);
 
   useEffect(() => {
     if (createRequest <= 0) return;
-    setFormOpen(true);
-    setNotice('');
-    setError('');
+    openCreate();
   }, [createRequest]);
 
-  function toggleEquipamento(id: number) {
-    setSelectedEquipamentos((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-    );
+  function openCreate() {
+    setFormOpen(true);
+    setTipo('entrega');
+    setDestinoTipo('colaborador');
+    setEquipamentoId('');
+    setQuantidade('1');
+    setColaboradorId('');
+    setLocalId('');
+    setNotice('');
+    setError('');
+    void loadEquipamentos('entrega');
   }
 
-  function toggleAlocacao(id: number) {
-    setSelectedAlocacoes((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-    );
+  function closeForm() {
+    setFormOpen(false);
+    setError('');
+  }
+
+  async function onChangeTipo(next: AlocacaoTipo) {
+    setTipo(next);
+    setEquipamentoId('');
+    await loadEquipamentos(next);
   }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!colaboradorId) {
+    if (!equipamentoId) {
+      setError('Selecione um equipamento');
+      return;
+    }
+    if (destinoTipo === 'colaborador' && !colaboradorId) {
       setError('Selecione um colaborador');
       return;
     }
-    if (selectedEquipamentos.length === 0) {
-      setError('Selecione ao menos um equipamento disponível');
+    if (destinoTipo === 'local' && !localId) {
+      setError('Selecione um local');
       return;
     }
+    const qty = Number(quantidade);
+    if (!Number.isFinite(qty) || qty < 1) {
+      setError('Quantidade inválida');
+      return;
+    }
+
     setSaving(true);
     setError('');
     setNotice('');
     try {
-      const result = await alocacoesApi.create({
-        colaborador_id: Number(colaboradorId),
-        equipamento_ids: selectedEquipamentos,
+      const created = await alocacoesApi.create({
+        tipo,
+        destino_tipo: destinoTipo,
+        equipamento_id: Number(equipamentoId),
+        quantidade: qty,
+        colaborador_id: destinoTipo === 'colaborador' ? Number(colaboradorId) : null,
+        local_id: destinoTipo === 'local' ? Number(localId) : null,
       });
-      setNotice(`Alocação criada. TRE de entrega ${result.tre_codigo} gerado.`);
-      setFormOpen(false);
-      setColaboradorId('');
-      setSelectedEquipamentos([]);
-      await load();
+      const treMsg = created.tre_codigo
+        ? ` TRE ${created.tipo === 'entrega' ? 'de entrega' : 'de devolução'} ${created.tre_codigo} gerado.`
+        : ' Movimento registrado sem TRE.';
+      setNotice(`Alocação ${created.codigo} criada.${treMsg}`);
+      closeForm();
+      await Promise.all([loadAlocacoes(search || undefined), loadEquipamentos(tipo)]);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível criar a alocação');
+      setError(err instanceof ApiError ? err.message : 'Não foi possível salvar a alocação');
     } finally {
       setSaving(false);
     }
   }
 
-  async function onDevolver() {
-    if (selectedAlocacoes.length === 0) {
-      setError('Selecione alocações ativas para devolver');
-      return;
-    }
-    setSaving(true);
-    setError('');
-    setNotice('');
-    try {
-      const result = await alocacoesApi.devolver(selectedAlocacoes);
-      setNotice(`Devolução registrada. TRE de devolução ${result.tre_codigo} gerado.`);
-      setSelectedAlocacoes([]);
-      await load();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível devolver');
-    } finally {
-      setSaving(false);
-    }
-  }
+  const selectedEquipamento = equipamentos.find((item) => String(item.id) === equipamentoId);
 
   return (
     <section className="equipamentos-page">
       <header className="page-header">
         <span className="eyebrow">Operações</span>
         <h1>Alocações</h1>
-        <p>Ao alocar ou devolver equipamentos, o sistema emite automaticamente o TRE correspondente.</p>
+        <p>
+          Movimente o estoque de equipamentos para colaborador (com TRE) ou local (somente registro). Só é possível
+          movimentar produtos vinculados a equipamentos.
+        </p>
       </header>
 
       {error && (
@@ -126,8 +167,7 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
       )}
       {notice && (
         <div className="form-alert success" role="status">
-          {notice}{' '}
-          <a href="/tres">Ver TREs</a>
+          {notice}
         </div>
       )}
 
@@ -135,102 +175,226 @@ export function Alocacoes({ createRequest = 0 }: AlocacoesProps) {
         <form className="card-panel cadastro-form equipamento-form" onSubmit={(event) => void onSubmit(event)}>
           <div className="form-heading">
             <h2>Nova alocação</h2>
-            <button type="button" className="btn btn-ghost" onClick={() => setFormOpen(false)}>
+            <button type="button" className="btn btn-ghost" onClick={closeForm}>
               Fechar
             </button>
           </div>
 
-          <div className="field">
-            <label htmlFor={`${formId}-colaborador`}>Colaborador</label>
-            <select
-              id={`${formId}-colaborador`}
-              value={colaboradorId}
-              onChange={(event) => setColaboradorId(event.target.value)}
-              required
-            >
-              <option value="">Selecione</option>
-              {colaboradores.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.nome}
-                </option>
-              ))}
-            </select>
+          <div className="form-grid-2">
+            <div className="field">
+              <label htmlFor={`${formId}-tipo`}>Tipo</label>
+              <select
+                id={`${formId}-tipo`}
+                value={tipo}
+                onChange={(event) => void onChangeTipo(event.target.value as AlocacaoTipo)}
+                required
+              >
+                <option value="entrega">Entrega</option>
+                <option value="devolucao">Devolução</option>
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor={`${formId}-destino-tipo`}>Destino</label>
+              <select
+                id={`${formId}-destino-tipo`}
+                value={destinoTipo}
+                onChange={(event) => {
+                  setDestinoTipo(event.target.value as DestinoTipo);
+                  setColaboradorId('');
+                  setLocalId('');
+                }}
+                required
+              >
+                <option value="colaborador">Colaborador</option>
+                <option value="local">Local</option>
+              </select>
+            </div>
           </div>
 
           <div className="field">
-            <span className="field-label">Equipamentos disponíveis</span>
-            {disponiveis.length === 0 ? (
-              <div className="empty-state">Nenhum equipamento disponível.</div>
-            ) : (
-              <div className="check-list">
-                {disponiveis.map((item) => (
-                  <label key={item.id} className="check-item">
-                    <input
-                      type="checkbox"
-                      checked={selectedEquipamentos.includes(item.id)}
-                      onChange={() => toggleEquipamento(item.id)}
-                    />
-                    <span>
-                      <strong>{item.codigo}</strong> — {item.produto_codigo} {item.produto_descricao} (pat. {item.numero_patrimonio})
-                    </span>
-                  </label>
+            <label htmlFor={`${formId}-codigo`}>Código</label>
+            <input id={`${formId}-codigo`} value="Gerado automaticamente" disabled readOnly />
+          </div>
+
+          <div className="form-grid-2">
+            <div className="field">
+              <label htmlFor={`${formId}-equipamento`}>Equipamento</label>
+              <select
+                id={`${formId}-equipamento`}
+                value={equipamentoId}
+                onChange={(event) => setEquipamentoId(event.target.value)}
+                required
+              >
+                <option value="">Selecione</option>
+                {equipamentos.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.codigo} — {item.produto_codigo} {item.produto_descricao} (pat. {item.numero_patrimonio})
+                  </option>
                 ))}
-              </div>
-            )}
+              </select>
+              {equipamentos.length === 0 && (
+                <p className="muted">
+                  Nenhum equipamento {tipo === 'entrega' ? 'disponível' : 'alocado'} para movimentar.
+                </p>
+              )}
+            </div>
+            <div className="field">
+              <label htmlFor={`${formId}-quantidade`}>Quantidade</label>
+              <input
+                id={`${formId}-quantidade`}
+                type="number"
+                min={1}
+                step={1}
+                value={quantidade}
+                onChange={(event) => setQuantidade(event.target.value)}
+                required
+              />
+            </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={saving || disponiveis.length === 0}>
-            {saving ? 'Salvando...' : 'Alocar e gerar TRE de entrega'}
+          {destinoTipo === 'colaborador' ? (
+            <div className="field">
+              <label htmlFor={`${formId}-colaborador`}>Colaborador</label>
+              <select
+                id={`${formId}-colaborador`}
+                value={colaboradorId}
+                onChange={(event) => setColaboradorId(event.target.value)}
+                required
+              >
+                <option value="">Selecione</option>
+                {colaboradores.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="field">
+              <label htmlFor={`${formId}-local`}>Local</label>
+              <select
+                id={`${formId}-local`}
+                value={localId}
+                onChange={(event) => setLocalId(event.target.value)}
+                required
+              >
+                <option value="">Selecione</option>
+                {locais.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.codigo} — {item.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="field">
+            <label htmlFor={`${formId}-criacao`}>Data de criação</label>
+            <input id={`${formId}-criacao`} value="Preenchida automaticamente ao salvar" disabled readOnly />
+          </div>
+
+          {selectedEquipamento && (
+            <div className="form-alert success" role="status">
+              Produto {selectedEquipamento.produto_codigo}: estoque será atualizado conforme o movimento.
+            </div>
+          )}
+
+          {destinoTipo === 'colaborador' && (
+            <p className="muted">
+              Destino colaborador gera automaticamente o TRE de {tipo === 'entrega' ? 'entrega' : 'devolução'}.
+            </p>
+          )}
+          {destinoTipo === 'local' && (
+            <p className="muted">Destino local apenas registra o movimento e atualiza o estoque disponível.</p>
+          )}
+
+          <button type="submit" className="btn btn-primary" disabled={saving || equipamentos.length === 0}>
+            {saving ? 'Salvando...' : 'Registrar alocação'}
           </button>
         </form>
       )}
 
+      <div className="card-panel filters-panel">
+        <div className="filters-grid locais-filters">
+          <div className="field">
+            <label htmlFor={`${formId}-busca`}>Pesquisar</label>
+            <input
+              id={`${formId}-busca`}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Código, colaborador, local ou equipamento"
+            />
+          </div>
+          <div className="filters-actions">
+            <button type="button" className="btn btn-primary" onClick={() => void loadAlocacoes(search)} disabled={loading}>
+              Pesquisar
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setSearch('');
+                void loadAlocacoes();
+              }}
+              disabled={loading}
+            >
+              Ver todos
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="card-panel cadastro-table-wrap">
         <div className="table-heading">
-          <h2>Alocações ativas</h2>
-          <button type="button" className="btn btn-primary" onClick={() => void onDevolver()} disabled={saving}>
-            Devolver selecionados
-          </button>
+          <h2>Movimentos de alocação</h2>
+          <span>{loading ? '...' : `${items.length} registro(s)`}</span>
         </div>
 
-        {ativas.length === 0 ? (
-          <div className="empty-state">Nenhuma alocação ativa.</div>
+        {loading ? (
+          <p className="muted">Carregando...</p>
+        ) : items.length === 0 ? (
+          <div className="empty-state">Nenhuma alocação encontrada.</div>
         ) : (
           <div className="table-scroll">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th></th>
+                  <th>Código</th>
+                  <th>Tipo</th>
+                  <th>Destino</th>
                   <th>Equipamento</th>
-                  <th>Produto</th>
-                  <th>Patrimônio</th>
-                  <th>Colaborador</th>
-                  <th>TRE entrega</th>
+                  <th>Qtde</th>
+                  <th>Data criação</th>
+                  <th>TRE</th>
                 </tr>
               </thead>
               <tbody>
-                {ativas.map((item) => (
+                {items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <input
-                        type="checkbox"
-                        aria-label={`Selecionar alocação ${item.id}`}
-                        checked={selectedAlocacoes.includes(item.id)}
-                        onChange={() => toggleAlocacao(item.id)}
-                      />
+                      <strong>{item.codigo}</strong>
+                    </td>
+                    <td>
+                      <span className={`status-pill${item.tipo === 'entrega' ? ' on' : ''}`}>
+                        {item.tipo === 'entrega' ? 'Entrega' : 'Devolução'}
+                      </span>
+                    </td>
+                    <td>
+                      <div>{item.destino_tipo === 'colaborador' ? 'Colaborador' : 'Local'}</div>
+                      <div className="muted">{item.destino_nome}</div>
                     </td>
                     <td>
                       <strong>{item.equipamento_codigo}</strong>
+                      <div className="muted">
+                        {item.produto_codigo} — {item.produto_descricao}
+                      </div>
                     </td>
+                    <td>{item.quantidade}</td>
+                    <td>{formatDateTime(item.created_at)}</td>
                     <td>
-                      {item.produto_codigo} — {item.produto_descricao}
-                    </td>
-                    <td>{item.numero_patrimonio}</td>
-                    <td>{item.colaborador_nome}</td>
-                    <td>
-                      {item.tre_entrega_id ? (
-                        <a href={tresApi.pdfUrl(item.tre_entrega_id)} target="_blank" rel="noreferrer">
-                          PDF
+                      {item.tre_id ? (
+                        <a href={tresApi.pdfUrl(item.tre_id)} target="_blank" rel="noreferrer">
+                          {item.tre_codigo || 'PDF'}
                         </a>
                       ) : (
                         '—'
