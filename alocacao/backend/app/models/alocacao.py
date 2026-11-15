@@ -18,6 +18,8 @@ class Alocacao(Base):
         index=True,
     )
     colaborador_id: Mapped[int | None] = mapped_column(ForeignKey('colaboradores.id'), nullable=True, index=True)
+    tre_entrega_id: Mapped[int | None] = mapped_column(ForeignKey('tres.id'), nullable=True, index=True)
+    tre_devolucao_id: Mapped[int | None] = mapped_column(ForeignKey('tres.id'), nullable=True, index=True)
     ativa: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -27,3 +29,4 @@ class Alocacao(Base):
     )
 
     equipamento = relationship('Equipamento', back_populates='alocacoes')
+    colaborador = relationship('Colaborador')

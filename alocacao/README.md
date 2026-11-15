@@ -25,8 +25,8 @@ alocacao/
 - Cadastros
 - Configurações
 - Notas Fiscais
-- TREs
-- Alocações
+- TREs (consulta/download dos termos gerados)
+- Alocações (gera TRE de entrega/devolução automaticamente)
 - Equipamentos
 
 ## Frontend
@@ -93,7 +93,20 @@ cp .env.example .env
 - Campos do equipamento: Código (a partir de `100000`), Produto, Nº série, Nº patrimônio (único), MAC (opcional)
 - Status **Alocado** quando houver alocação ativa vinculada; caso contrário **Disponível**
 
-APIs: `/api/categorias`, `/api/produtos`, `/api/colaboradores`, `/api/fornecedores`, `/api/equipamentos`  
+### TREs
+
+- Página `/tres` com pesquisa por nome do colaborador, código e intervalo de data de emissão
+- Grade: Código, Colaborador, Data criação, Tipo (Entrega/Devolução) e download do PDF
+- Numeração sequencial única a partir de `000001`
+- Modelos oficiais em `backend/app/assets/tre/` (`TRE-Entrega.pdf`, `TRE-Devolucao.pdf`)
+- PDFs gerados em `backend/data/tres/`
+
+### Alocações
+
+- Página `/alocacoes`: aloca equipamentos disponíveis a um colaborador e emite TRE de entrega
+- Devolução de alocações ativas emite TRE de devolução e libera o equipamento
+
+APIs: `/api/categorias`, `/api/produtos`, `/api/colaboradores`, `/api/fornecedores`, `/api/equipamentos`, `/api/alocacoes`, `/api/tres`  
 Persistência local SQLite em `backend/data/alocacao.db`.
 
 ## Próximos passos

@@ -8,8 +8,10 @@ import { Dashboard } from './pages/Dashboard';
 import { Equipamentos } from './pages/Equipamentos';
 import { Fornecedores } from './pages/Fornecedores';
 import { Login } from './pages/Login';
+import { Alocacoes } from './pages/Alocacoes';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { Produtos } from './pages/Produtos';
+import { Tres } from './pages/Tres';
 
 function ProtectedShell({
   children,
@@ -124,33 +126,17 @@ export default function App() {
       <Route
         path="/tres"
         element={
-          <ProtectedShell ctaLabel="+ Emitir TRE">
-            <PlaceholderPage
-              title="TREs"
-              description="Emita o Termo de Responsabilidade de Equipamento na entrega e na devolução."
-              features={[
-                { title: 'TRE de entrega', text: 'Documento assinado ao alocar equipamentos.' },
-                { title: 'TRE de devolução', text: 'Baixa com checklist de condição do item.' },
-                { title: 'Histórico', text: 'Consulta e reimpressão dos termos emitidos.' },
-              ]}
-            />
+          <ProtectedShell>
+            <Tres />
           </ProtectedShell>
         }
       />
       <Route
         path="/alocacoes"
         element={
-          <ProtectedShell ctaLabel="+ Nova alocação">
-            <PlaceholderPage
-              title="Alocações"
-              description="Controle de saída e retorno de equipamentos para colaboradores."
-              features={[
-                { title: 'Saída', text: 'Reserve itens do estoque e vincule ao colaborador.' },
-                { title: 'Retorno', text: 'Receba o item e atualize o inventário.' },
-                { title: 'Pendências', text: 'Acompanhe alocações sem TRE ou com atraso.' },
-              ]}
-            />
-          </ProtectedShell>
+          <CrudRoute ctaLabel="+ Nova alocação">
+            {(createRequest) => <Alocacoes createRequest={createRequest} />}
+          </CrudRoute>
         }
       />
       <Route

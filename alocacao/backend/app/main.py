@@ -8,8 +8,8 @@ from app.core.config import get_settings
 from app.db.migrate import ensure_schema
 from app.db.seed import seed_categorias
 from app.db.session import SessionLocal, engine
-from app.models import Alocacao, Categoria, Colaborador, Equipamento, Fornecedor, Produto  # noqa: F401
-from app.routers import categorias, colaboradores, equipamentos, fornecedores, produtos
+from app.models import Alocacao, Categoria, Colaborador, Equipamento, Fornecedor, Produto, Tre, TreItem  # noqa: F401
+from app.routers import alocacoes, categorias, colaboradores, equipamentos, fornecedores, produtos, tres
 
 settings = get_settings()
 
@@ -41,6 +41,8 @@ app.include_router(colaboradores.router, prefix=settings.api_prefix)
 app.include_router(fornecedores.router, prefix=settings.api_prefix)
 app.include_router(produtos.router, prefix=settings.api_prefix)
 app.include_router(equipamentos.router, prefix=settings.api_prefix)
+app.include_router(alocacoes.router, prefix=settings.api_prefix)
+app.include_router(tres.router, prefix=settings.api_prefix)
 
 
 @app.get('/health')

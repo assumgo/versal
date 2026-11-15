@@ -4,5 +4,15 @@ from app.models.colaborador import Colaborador
 from app.models.equipamento import Equipamento
 from app.models.fornecedor import Fornecedor
 from app.models.produto import Produto
+from app.models.tre import Tre, TreItem
 
-__all__ = ['Alocacao', 'Categoria', 'Colaborador', 'Equipamento', 'Fornecedor', 'Produto']
+__all__ = [
+    'Alocacao',
+    'Categoria',
+    'Colaborador',
+    'Equipamento',
+    'Fornecedor',
+    'Produto',
+    'Tre',
+    'TreItem',
+]
