@@ -1,0 +1,99 @@
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+
+from app.core.config import get_settings
+from app.db.migrate import ensure_schema
+from app.db.seed import seed_categorias
+from app.db.session import SessionLocal, engine, get_db
+from app.repositories import dashboard as dashboard_repo
+from app.models import (  # noqa: F401
+    Alocacao,
+    Categoria,
+    Colaborador,
+    Equipamento,
+    Fornecedor,
+    Local,
+    Produto,
+    Tre,
+    TreItem,
+)
+from app.routers import (
+    alocacoes,
+    categorias,
+    colaboradores,
+    equipamentos,
+    fornecedores,
+    locais,
+    produtos,
+    tres,
+)
+
+settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    if settings.database_url.startswith('sqlite:///'):
+        db_path = Path(settings.database_url.replace('sqlite:///', '', 1))
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_schema(engine)
+    db = SessionLocal()
+    try:
+        seed_categorias(db)
+    finally:
+        db.close()
+    yield
+
+
+app = FastAPI(title=settings.app_name, version='0.1.0', lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.origins or ['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
+app.include_router(categorias.router, prefix=settings.api_prefix)
+app.include_router(colaboradores.router, prefix=settings.api_prefix)
+app.include_router(fornecedores.router, prefix=settings.api_prefix)
+app.include_router(locais.router, prefix=settings.api_prefix)
+app.include_router(produtos.router, prefix=settings.api_prefix)
+app.include_router(equipamentos.router, prefix=settings.api_prefix)
+app.include_router(alocacoes.router, prefix=settings.api_prefix)
+app.include_router(tres.router, prefix=settings.api_prefix)
+
+
+@app.get('/health')
+def health() -> dict[str, str]:
+    return {'status': 'ok', 'service': 'alocacao-recursos'}
+
+
+@app.get(f'{settings.api_prefix}/meta')
+def meta() -> dict[str, object]:
+    return {
+        'name': settings.app_name,
+        'modules': [
+            'cadastros',
+            'locais',
+            'configuracoes',
+            'notas-fiscais',
+            'tres',
+            'alocacoes',
+            'equipamentos',
+        ],
+        'auth': {
+            'provider': 'microsoft-entra-id',
+            'tenant_configured': bool(settings.azure_tenant_id),
+            'client_configured': bool(settings.azure_client_id),
+        },
+    }
+
+
+@app.get(f'{settings.api_prefix}/dashboard/summary')
+def dashboard_summary(db: Session = Depends(get_db)) -> dict[str, object]:
+    """Saldos de estoque e resumo por categoria a partir dos equipamentos cadastrados."""
+    return dashboard_repo.build_dashboard_summary(db)

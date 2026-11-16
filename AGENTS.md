@@ -2,7 +2,9 @@
 
 ## Project Structure & Module Organization
 
-Versal Folha TXT is a payroll application being migrated to the web. The current foundation uses FastAPI, React/TypeScript/Vite, and PostgreSQL 16.
+The repository hosts Versal web products. Folha TXT (payroll) lives under `web/`. Alocação de Recursos (equipment inventory / TRE) lives under `alocacao/`.
+
+### Folha TXT (`web/`)
 
 - `web/backend/app/`: API entry point, configuration/database helpers in `core/`, and SQLAlchemy models in `models/`.
 - `web/backend/alembic/`: versioned database migrations.
@@ -10,6 +12,12 @@ Versal Folha TXT is a payroll application being migrated to the web. The current
 - `web/frontend/src/`: React application; `index.html` is the frontend entry document.
 - `web/docker-compose.yml`: local development stack.
 - `docs/superpowers/`: design specifications and implementation plans. See `web/docs/legacy-schema-compatibility.md` for schema constraints.
+
+### Alocação de Recursos (`alocacao/`)
+
+- `alocacao/frontend/`: React/TypeScript/Vite UI with Microsoft Entra ID (MSAL), light/dark themes, dashboard and module menus.
+- `alocacao/backend/`: FastAPI bootstrap (`/health`, `/api/meta`, `/api/dashboard/summary`).
+- Setup and run commands: `alocacao/README.md`. Frontend default port `5174`; API default port `8001`.
 
 ## Build, Test, and Development Commands
 

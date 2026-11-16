@@ -1,0 +1,74 @@
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+StatusEquipamento = Literal['disponivel', 'alocado']
+
+
+class EquipamentoBase(BaseModel):
+    produto_id: int
+    numero_serie: str = Field(min_length=1, max_length=100)
+    numero_patrimonio: str = Field(min_length=1, max_length=100)
+    mac_address: str | None = Field(default=None, max_length=32)
+
+    @field_validator('numero_serie', 'numero_patrimonio')
+    @classmethod
+    def strip_required(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError('Campo obrigatório')
+        return cleaned
+
+    @field_validator('mac_address')
+    @classmethod
+    def normalize_mac(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().upper()
+        return cleaned or None
+
+
+class EquipamentoCreate(EquipamentoBase):
+    pass
+
+
+class EquipamentoUpdate(BaseModel):
+    produto_id: int | None = None
+    numero_serie: str | None = Field(default=None, min_length=1, max_length=100)
+    numero_patrimonio: str | None = Field(default=None, min_length=1, max_length=100)
+    mac_address: str | None = Field(default=None, max_length=32)
+
+    @field_validator('numero_serie', 'numero_patrimonio')
+    @classmethod
+    def strip_required(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError('Campo obrigatório')
+        return cleaned
+
+    @field_validator('mac_address')
+    @classmethod
+    def normalize_mac(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().upper()
+        return cleaned or None
+
+
+class EquipamentoOut(EquipamentoBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    codigo: str
+    status: StatusEquipamento
+    produto_codigo: str
+    produto_descricao: str
+    marca: str
+    modelo: str
+    categoria_id: int
+    categoria_nome: str
+    created_at: datetime
+    updated_at: datetime
