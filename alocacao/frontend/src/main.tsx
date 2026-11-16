@@ -11,11 +11,13 @@ import './styles/dashboard.css';
 import './styles/cadastros.css';
 import './styles/equipamentos.css';
 
+const routerBasename = (import.meta.env.VITE_BASE_PATH || '/').replace(/\/$/, '') || undefined;
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={routerBasename}>
           <App />
         </BrowserRouter>
       </AuthProvider>
