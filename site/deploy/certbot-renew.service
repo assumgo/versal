@@ -1,0 +1,6 @@
+[Unit]
+Description=Renova o certificado HTTPS do IP Versal
+
+[Service]
+Type=oneshot
+ExecStart=/opt/certbot/bin/certbot renew --quiet --deploy-hook "nginx -t && systemctl reload nginx"
